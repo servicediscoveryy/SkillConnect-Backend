@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateRequest = exports.ratingValidationSchema = exports.createServiceValidationSchema = exports.signupSchema = exports.signinSchema = void 0;
+exports.validateRequest = exports.ratingValidationSchema = exports.addressValidationSchema = exports.createServiceValidationSchema = exports.signupSchema = exports.signinSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
 const ApiError_1 = __importDefault(require("../utils/response/ApiError"));
 const signinSchema = joi_1.default.object({
@@ -45,3 +45,37 @@ const createServiceValidationSchema = joi_1.default.object({
     location: joi_1.default.string().required(),
 });
 exports.createServiceValidationSchema = createServiceValidationSchema;
+const addressValidationSchema = joi_1.default.object({
+    street: joi_1.default.string().required().messages({
+        "string.base": "Street must be a string",
+        "string.empty": "Street is required",
+        "any.required": "Street is required",
+    }),
+    area: joi_1.default.string().allow("").optional(),
+    city: joi_1.default.string().required().messages({
+        "string.base": "City must be a string",
+        "string.empty": "City is required",
+        "any.required": "City is required",
+    }),
+    state: joi_1.default.string().required().messages({
+        "string.base": "State must be a string",
+        "string.empty": "State is required",
+        "any.required": "State is required",
+    }),
+    country: joi_1.default.string().required().messages({
+        "string.base": "Country must be a string",
+        "string.empty": "Country is required",
+        "any.required": "Country is required",
+    }),
+    pincode: joi_1.default.string()
+        .pattern(/^\d{6}$/)
+        .required()
+        .messages({
+        "string.base": "Pincode must be a string",
+        "string.empty": "Pincode is required",
+        "string.pattern.base": "Pincode must be a 6-digit number",
+        "any.required": "Pincode is required",
+    }),
+    landmark: joi_1.default.string().allow("").optional(),
+});
+exports.addressValidationSchema = addressValidationSchema;

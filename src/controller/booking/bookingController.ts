@@ -8,14 +8,19 @@ import { RequestWithUser } from "../../types/RequestWithUser";
 import STATUS from "../../data/statusCodes";
 import Payment from "../../models/paymentModel";
 import Service from "../../models/serviceModel";
+import Address from "../../models/addressModel";
 
 // Create a Booking
 export const createBooking = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
-    const { serviceId } = req.body;
+    const { serviceId, addressId } = req.body;
+    if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
 
-    if (!mongoose.Types.ObjectId.isValid(serviceId)) {
-      throw new ApiError(STATUS.badRequest, "Invalid service ID format");
+    if (
+      !mongoose.Types.ObjectId.isValid(serviceId) ||
+      !mongoose.Types.ObjectId.isValid(addressId)
+    ) {
+      throw new ApiError(STATUS.badRequest, "Invalid Fields");
     }
 
     const service = await Service.findById(serviceId);
@@ -24,12 +29,17 @@ export const createBooking = asyncHandler(
       throw new ApiError(STATUS.notFound, "Service is not found");
     }
 
-    if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+    const address = await Address.findById(addressId);
+
+    if (!address) {
+      throw new ApiError(STATUS.notFound, "address is not found");
+    }
 
     const amount = service.price;
 
     const newBooking = new Booking({
       amount,
+      addressId,
       userId: req.user._id,
       serviceId,
     });

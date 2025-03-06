@@ -8,6 +8,7 @@ import ApiResponse from "../../utils/response/ApiResponse";
 import { ResponseReturnType } from "../../types/ReturnController";
 import { signinSchema, signupSchema, validateRequest } from "../../validation";
 import STATUS from "../../data/statusCodes";
+import Address from "../../models/addressModel";
 
 // Login controller
 export const userLoginController = asyncHandler(
@@ -210,16 +211,18 @@ export const userLogoutController = asyncHandler(
 
 export const getProfileController = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
-    const user = req.user._id;
-    const profile = await User.findOne({ _id: user }).select("-password");
+    const userId = req.user._id;
+    const profile = await User.findOne({ _id: userId }).select("-password");
 
     if (!profile) {
       throw new ApiError(STATUS.internalServerError, "Session Expired");
     }
+    
+    const address = await Address.find({ userId });
 
     const response = new ApiResponse(
       STATUS.ok,
-      { data: profile },
+      { profile, address },
       "Fetch User Data Successfully"
     );
 

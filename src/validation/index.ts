@@ -44,10 +44,45 @@ const createServiceValidationSchema = Joi.object({
   location: Joi.string().required(),
 });
 
+const addressValidationSchema = Joi.object({
+  street: Joi.string().required().messages({
+    "string.base": "Street must be a string",
+    "string.empty": "Street is required",
+    "any.required": "Street is required",
+  }),
+  area: Joi.string().allow("").optional(),
+  city: Joi.string().required().messages({
+    "string.base": "City must be a string",
+    "string.empty": "City is required",
+    "any.required": "City is required",
+  }),
+  state: Joi.string().required().messages({
+    "string.base": "State must be a string",
+    "string.empty": "State is required",
+    "any.required": "State is required",
+  }),
+  country: Joi.string().required().messages({
+    "string.base": "Country must be a string",
+    "string.empty": "Country is required",
+    "any.required": "Country is required",
+  }),
+  pincode: Joi.string()
+    .pattern(/^\d{6}$/)
+    .required()
+    .messages({
+      "string.base": "Pincode must be a string",
+      "string.empty": "Pincode is required",
+      "string.pattern.base": "Pincode must be a 6-digit number",
+      "any.required": "Pincode is required",
+    }),
+  landmark: Joi.string().allow("").optional(),
+});
+
 export {
   signinSchema,
   signupSchema,
   createServiceValidationSchema,
+  addressValidationSchema,
   ratingValidationSchema,
   validateRequest,
 };

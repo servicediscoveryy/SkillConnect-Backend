@@ -14,6 +14,8 @@ const userRoutes_1 = __importDefault(require("./routes/auth/userRoutes"));
 const serviceProviderRoutes_1 = __importDefault(require("./routes/serviceProvider/serviceProviderRoutes"));
 const serviceRouter_1 = __importDefault(require("./routes/services/serviceRouter"));
 const bookingRouter_1 = __importDefault(require("./routes/booking/bookingRouter"));
+const addressRouter_1 = __importDefault(require("./routes/address/addressRouter"));
+const cartRouter_1 = __importDefault(require("./routes/cart/cartRouter"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cookie_parser_1.default)());
@@ -30,6 +32,10 @@ app.use("/api/v1/services", serviceRouter_1.default);
 app.use("/api/v1/provider-services", serviceProviderRoutes_1.default);
 // booking routes
 app.use("/api/v1/booking", bookingRouter_1.default);
+//address routes
+app.use("/api/v1/address", addressRouter_1.default);
+//cart routes
+app.use("/api/v1/cart", cartRouter_1.default);
 app.get("/", (req, res) => {
     res.send("SERVER IS WORKING");
 });
@@ -37,6 +43,7 @@ app.get("/", (req, res) => {
 app.use(
 // @ts-ignore
 (err, req, res, next) => {
+    console.log(err);
     if (err instanceof ApiError_1.default) {
         return res.status(err.statusCode).json({
             status: err.statusCode,

@@ -21,21 +21,28 @@ const bookingModel_1 = __importDefault(require("../../models/bookingModel"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const paymentModel_1 = __importDefault(require("../../models/paymentModel"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
+const addressModel_1 = __importDefault(require("../../models/addressModel"));
 // Create a Booking
 exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { serviceId } = req.body;
-    if (!mongoose_1.default.Types.ObjectId.isValid(serviceId)) {
-        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid service ID format");
+    const { serviceId, addressId } = req.body;
+    if (!req.user)
+        throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
+    if (!mongoose_1.default.Types.ObjectId.isValid(serviceId) ||
+        !mongoose_1.default.Types.ObjectId.isValid(addressId)) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid Fields");
     }
     const service = yield serviceModel_1.default.findById(serviceId);
     if (!service) {
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Service is not found");
     }
-    if (!req.user)
-        throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
+    const address = yield addressModel_1.default.findById(addressId);
+    if (!address) {
+        throw new ApiError_1.default(statusCodes_1.default.notFound, "address is not found");
+    }
     const amount = service.price;
     const newBooking = new bookingModel_1.default({
         amount,
+        addressId,
         userId: req.user._id,
         serviceId,
     });

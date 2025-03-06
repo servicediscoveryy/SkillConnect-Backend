@@ -20,6 +20,7 @@ const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const validation_1 = require("../../validation");
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
+const addressModel_1 = __importDefault(require("../../models/addressModel"));
 // Login controller
 exports.userLoginController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
@@ -150,12 +151,13 @@ exports.userLogoutController = (0, asyncHandler_1.default)((req, res) => {
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, null, "Logout successfully..."));
 });
 exports.getProfileController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = req.user._id;
-    const profile = yield userModel_1.default.findOne({ _id: user }).select("-password");
+    const userId = req.user._id;
+    const profile = yield userModel_1.default.findOne({ _id: userId }).select("-password");
     if (!profile) {
         throw new ApiError_1.default(statusCodes_1.default.internalServerError, "Session Expired");
     }
-    const response = new ApiResponse_1.default(statusCodes_1.default.ok, { data: profile }, "Fetch User Data Successfully");
+    const address = yield addressModel_1.default.find({ userId });
+    const response = new ApiResponse_1.default(statusCodes_1.default.ok, { profile, address }, "Fetch User Data Successfully");
     res.status(statusCodes_1.default.ok).json(response);
 }));
 const updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {

@@ -9,6 +9,13 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    addressId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+      required: true,
+    },
+
     serviceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Service",
