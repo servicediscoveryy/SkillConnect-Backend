@@ -13,40 +13,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authuser = void 0;
-const userModel_1 = __importDefault(require("../models/userModel")); // Ensure you are importing the User model
+const userModel_1 = __importDefault(require("../models/userModel"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const authuser = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const ApiError_1 = __importDefault(require("../utils/response/ApiError")); // Import custom response functions
+const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
+exports.authuser = (0, asyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    try {
-        // Get token from cookie or authorization header
-        let token = ((_a = req === null || req === void 0 ? void 0 : req.cookies) === null || _a === void 0 ? void 0 : _a.token) || ((_b = req === null || req === void 0 ? void 0 : req.headers["authorization"]) === null || _b === void 0 ? void 0 : _b.split(" ")[1]);
-        console.log(token);
-        console.log(req.cookies);
-        if (!token) {
-            return res.status(401).json({ message: "Please Login" });
-        }
-        // Verify the token
-        const decodedObj = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
-        // If the token is invalid or cannot be decoded
-        if (!decodedObj) {
-            return res.status(401).json({ message: "Invalid token" });
-        }
-        // Extract userId from the decoded token
-        // @ts-ignore
-        const { userId } = decodedObj.user;
-        // Find user by userId and exclude password field from the result
-        const user = yield userModel_1.default.findById(userId).select("-password");
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        // Attach the user to the request object for further processing in the next middleware or route handler
-        // @ts-ignore
-        req.user = user;
-        next();
+    const token = ((_a = req.cookies) === null || _a === void 0 ? void 0 : _a.token) || ((_b = req.headers["authorization"]) === null || _b === void 0 ? void 0 : _b.split(" ")[1]);
+    if (!token) {
+        throw new ApiError_1.default(401, "Please Login"); // Throw a custom error
     }
-    catch (error) {
-        console.error(error);
-        res.status(400).json({ message: "ERROR: " + error.message });
+    // Verify the token
+    const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
+    // Find user by userId
+    const user = yield userModel_1.default.findById(decoded.userId);
+    if (!user) {
+        throw new ApiError_1.default(404, "User not found");
     }
-});
-exports.authuser = authuser;
+    req.user = user;
+    next();
+}));

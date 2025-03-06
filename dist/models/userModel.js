@@ -20,13 +20,20 @@ const userSchema = new mongoose_1.default.Schema({
     phone: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, default: 'user' }, // Default role as 'user'
-    profilePicture: { type: String },
+    role: {
+        type: String,
+        enum: ["user", "admin", "provider"],
+        default: "user",
+    }, // Default role as 'user'
+    profilePicture: {
+        type: String,
+        default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
+    },
 }, { timestamps: true });
 // Hash password before saving to the database
-userSchema.pre('save', function (next) {
+userSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!this.isModified('password'))
+        if (!this.isModified("password"))
             return next(); // only hash the password if it's modified
         this.password = yield bcryptjs_1.default.hash(this.password, 10);
         next();
@@ -38,5 +45,5 @@ userSchema.methods.comparePassword = function (password) {
         return yield bcryptjs_1.default.compare(password, this.password);
     });
 };
-const User = mongoose_1.default.model('User', userSchema);
+const User = mongoose_1.default.model("User", userSchema);
 exports.default = User;

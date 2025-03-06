@@ -8,5 +8,5 @@ const profileController_1 = require("../../controller/profile/profileController"
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 const profileRouter = express_1.default.Router();
 // @ts-ignore
-profileRouter.get('/user/profile', authMiddleware_1.authuser, profileController_1.getProfileController);
+profileRouter.get("/user/profile", authMiddleware_1.authuser, profileController_1.getProfileController);
 exports.default = profileRouter;
