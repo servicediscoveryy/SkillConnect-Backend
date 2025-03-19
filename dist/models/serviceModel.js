@@ -10,9 +10,21 @@ const serviceSchema = new mongoose_1.default.Schema({
         ref: "User",
         required: true,
     },
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    category: { type: String, required: true },
+    title: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    description: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    category: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "Category",
+        required: true,
+    },
     image: { type: [String], default: [] },
     price: { type: Number, required: true, min: 0 },
     status: {
@@ -22,8 +34,15 @@ const serviceSchema = new mongoose_1.default.Schema({
         required: true,
     },
     view: { type: Number, default: 0, min: 0 },
-    location: { type: String, required: true },
-    tags: { type: [String] },
+    location: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    tags: {
+        type: [String],
+        set: (tags) => tags.map((tag) => tag.toLowerCase()),
+    },
 }, { timestamps: true });
 const Service = mongoose_1.default.model("Service", serviceSchema);
 exports.default = Service;

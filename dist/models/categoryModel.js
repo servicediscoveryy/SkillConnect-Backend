@@ -5,7 +5,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const CategorySchema = new mongoose_1.default.Schema({
-    category: { type: String, required: true },
+    category: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
 }, { timestamps: true });
-const Category = mongoose_1.default.model('Category', CategorySchema);
+const Category = mongoose_1.default.model("Category", CategorySchema);
 exports.default = Category;

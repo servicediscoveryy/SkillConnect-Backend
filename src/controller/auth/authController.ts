@@ -217,7 +217,7 @@ export const getProfileController = asyncHandler(
     if (!profile) {
       throw new ApiError(STATUS.internalServerError, "Session Expired");
     }
-    
+
     const address = await Address.find({ userId });
 
     const response = new ApiResponse(

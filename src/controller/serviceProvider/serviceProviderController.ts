@@ -28,6 +28,10 @@ export const createService = asyncHandler(
       );
     }
 
+    if (!category) {
+      throw new ApiError(STATUS.badRequest, "Choose Right Category");
+    }
+
     const newService = new Service({
       providerId: req.user._id,
       title,

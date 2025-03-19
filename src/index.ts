@@ -12,6 +12,8 @@ import servicesRouter from "./routes/services/serviceRouter";
 import bookingRouter from "./routes/booking/bookingRouter";
 import addressRouter from "./routes/address/addressRouter";
 import cartRouter from "./routes/cart/cartRouter";
+import categoryRouter from "./routes/category/categoryRouter";
+import { adminRouter } from "./routes/admin";
 
 dotenv.config();
 
@@ -43,6 +45,12 @@ app.use("/api/v1/address", addressRouter);
 
 //cart routes
 app.use("/api/v1/cart", cartRouter);
+
+// category Route
+app.use("/api/v1/category", categoryRouter);
+
+// admin routes
+app.use("/api/v1/admin", adminRouter);
 
 app.get("/", (req, res) => {
   res.send("SERVER IS WORKING");

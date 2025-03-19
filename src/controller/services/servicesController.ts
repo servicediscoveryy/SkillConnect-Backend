@@ -6,6 +6,7 @@ import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/response/ApiError";
 import ApiResponse from "../../utils/response/ApiResponse";
 import { integrateRatings } from "../../utils/rating/integrateRatings";
+import Category from "../../models/categoryModel";
 
 export const getServices = asyncHandler(
   asyncHandler(async (req, res) => {
@@ -17,7 +18,14 @@ export const getServices = asyncHandler(
 
     // Add category filter if category is provided in the query
     if (category) {
-      filter.category = category;
+      const categoryDoc = await Category.findOne({
+        category: { $regex: category, $options: "i" }, // ✅ Partial match (case-insensitive)
+      });
+
+      if (!categoryDoc) {
+        throw new ApiError(404, "Category not found");
+      }
+      filter.category = categoryDoc._id;
     }
 
     // Add search filter if query is provided in the query
@@ -25,7 +33,6 @@ export const getServices = asyncHandler(
       filter.$or = [
         { title: { $regex: query, $options: "i" } },
         { description: { $regex: query, $options: "i" } },
-        { category: { $regex: query, $options: "i" } },
         { tags: { $regex: query, $options: "i" } },
       ];
     }
@@ -34,6 +41,7 @@ export const getServices = asyncHandler(
 
     // Fetch paginated services based on the filter
     const services = await Service.find(filter)
+      .populate("category", "category")
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -132,3 +140,5 @@ export const getServiceById = asyncHandler(async (req, res) => {
       )
     );
 });
+
+export const getServicesByCategory = asyncHandler(async (req, res) => {});

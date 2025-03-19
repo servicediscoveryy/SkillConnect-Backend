@@ -28,6 +28,9 @@ exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     if (!Array.isArray(image)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Images should be an array of urls");
     }
+    if (!category) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Choose Right Category");
+    }
     const newService = new serviceModel_1.default({
         providerId: req.user._id,
         title,

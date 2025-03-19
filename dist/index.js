@@ -16,6 +16,8 @@ const serviceRouter_1 = __importDefault(require("./routes/services/serviceRouter
 const bookingRouter_1 = __importDefault(require("./routes/booking/bookingRouter"));
 const addressRouter_1 = __importDefault(require("./routes/address/addressRouter"));
 const cartRouter_1 = __importDefault(require("./routes/cart/cartRouter"));
+const categoryRouter_1 = __importDefault(require("./routes/category/categoryRouter"));
+const admin_1 = require("./routes/admin");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cookie_parser_1.default)());
@@ -36,6 +38,10 @@ app.use("/api/v1/booking", bookingRouter_1.default);
 app.use("/api/v1/address", addressRouter_1.default);
 //cart routes
 app.use("/api/v1/cart", cartRouter_1.default);
+// category Route
+app.use("/api/v1/category", categoryRouter_1.default);
+// admin routes
+app.use("/api/v1/admin", admin_1.adminRouter);
 app.get("/", (req, res) => {
     res.send("SERVER IS WORKING");
 });

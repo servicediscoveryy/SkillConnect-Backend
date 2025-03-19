@@ -10,13 +10,38 @@ const addressSchema = new mongoose_1.default.Schema({
         ref: "User",
         required: true,
     },
-    street: { type: String, required: true },
-    area: { type: String },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    country: { type: String, required: true },
-    pincode: { type: String, required: true },
-    landmark: { type: String },
+    street: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    area: {
+        type: String,
+        set: (value) => value.toLowerCase(),
+    },
+    city: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    state: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    country: {
+        type: String,
+        required: true,
+        set: (value) => value.toLowerCase(),
+    },
+    pincode: {
+        type: String,
+        required: true, // Keep as string to support leading zeros
+    },
+    landmark: {
+        type: String,
+        set: (value) => value.toLowerCase(),
+    },
 }, { timestamps: true });
 const Address = mongoose_1.default.model("Address", addressSchema);
 exports.default = Address;

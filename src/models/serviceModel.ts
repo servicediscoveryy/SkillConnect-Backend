@@ -7,9 +7,21 @@ const serviceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    title: { type: String, required: true },
-    description: { type: String, required: true },
-    category: { type: String, required: true },
+    title: {
+      type: String,
+      required: true,
+      set: (value: string) => value.toLowerCase(),
+    },
+    description: {
+      type: String,
+      required: true,
+      set: (value: string) => value.toLowerCase(),
+    },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
     image: { type: [String], default: [] },
     price: { type: Number, required: true, min: 0 },
     status: {
@@ -19,8 +31,15 @@ const serviceSchema = new mongoose.Schema(
       required: true,
     },
     view: { type: Number, default: 0, min: 0 },
-    location: { type: String, required: true },
-    tags: { type: [String] },
+    location: {
+      type: String,
+      required: true,
+      set: (value: string) => value.toLowerCase(),
+    },
+    tags: {
+      type: [String],
+      set: (tags: string[]) => tags.map((tag) => tag.toLowerCase()),
+    },
   },
   { timestamps: true }
 );

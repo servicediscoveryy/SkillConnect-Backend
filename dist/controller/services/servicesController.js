@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
+exports.getServicesByCategory = exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const ratingModel_1 = __importDefault(require("../../models/ratingModel"));
@@ -21,6 +21,7 @@ const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const integrateRatings_1 = require("../../utils/rating/integrateRatings");
+const categoryModel_1 = __importDefault(require("../../models/categoryModel"));
 exports.getServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page) || 1;
@@ -28,20 +29,26 @@ exports.getServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((r
     const filter = { status: "active" }; // Default filter by status
     // Add category filter if category is provided in the query
     if (category) {
-        filter.category = category;
+        const categoryDoc = yield categoryModel_1.default.findOne({
+            category: { $regex: category, $options: "i" }, // ✅ Partial match (case-insensitive)
+        });
+        if (!categoryDoc) {
+            throw new ApiError_1.default(404, "Category not found");
+        }
+        filter.category = categoryDoc._id;
     }
     // Add search filter if query is provided in the query
     if (query) {
         filter.$or = [
             { title: { $regex: query, $options: "i" } },
             { description: { $regex: query, $options: "i" } },
-            { category: { $regex: query, $options: "i" } },
             { tags: { $regex: query, $options: "i" } },
         ];
     }
     const totalServices = yield serviceModel_1.default.countDocuments(filter); // Get total count based on filters
     // Fetch paginated services based on the filter
     const services = yield serviceModel_1.default.find(filter)
+        .populate("category", "category")
         .skip((page - 1) * limit)
         .limit(limit);
     const servicesWithRatings = yield (0, integrateRatings_1.integrateRatings)(services);
@@ -111,3 +118,4 @@ exports.getServiceById = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
         .status(200)
         .json(new ApiResponse_1.default(200, Object.assign(Object.assign({}, service), { ratings, ratingAvg }), "Service details fetched"));
 }));
+exports.getServicesByCategory = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () { }));
