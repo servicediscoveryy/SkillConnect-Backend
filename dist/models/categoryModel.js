@@ -10,6 +10,10 @@ const CategorySchema = new mongoose_1.default.Schema({
         required: true,
         set: (value) => value.toLowerCase(),
     },
+    image: {
+        type: String,
+        required: true,
+    },
 }, { timestamps: true });
 const Category = mongoose_1.default.model("Category", CategorySchema);
 exports.default = Category;

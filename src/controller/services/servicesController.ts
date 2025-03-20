@@ -33,6 +33,7 @@ export const getServices = asyncHandler(
       filter.$or = [
         { title: { $regex: query, $options: "i" } },
         { description: { $regex: query, $options: "i" } },
+        { location: { $regex: query, $options: "i" } },
         { tags: { $regex: query, $options: "i" } },
       ];
     }
@@ -64,33 +65,47 @@ export const getServices = asyncHandler(
 );
 
 export const getTopServices = asyncHandler(async (req, res) => {
-  const limit = parseInt(req.query.limit as string) || 10;
+  try {
+    const { limit = 10, location, category, status } = req.query;
 
-  const topServices = await Rating.aggregate([
-    {
-      $group: {
-        _id: "$serviceId",
-        avgRating: { $avg: "$rating" },
-        ratingCount: { $sum: 1 },
+    const filter: any = {}; // Dynamic filter object
+
+    if (location) filter.location = location;
+    if (category) filter.category = category;
+    if (status) filter.status = status;
+
+    const topServices = await Rating.aggregate([
+      {
+        $group: {
+          _id: "$serviceId",
+          avgRating: { $avg: "$rating" },
+          ratingCount: { $sum: 1 },
+        },
       },
-    },
-    { $sort: { avgRating: -1, ratingCount: -1 } },
-    {
-      $limit: limit,
-    },
-  ]);
+      { $sort: { avgRating: -1, ratingCount: -1 } },
+      { $limit: parseInt(limit as string) },
+    ]);
 
-  const services = await Service.find({
-    _id: { $in: topServices.map((service) => service._id) },
-  });
+    const serviceIds = topServices.map((service) => service._id);
 
-  const servicesWithRatings = await integrateRatings(services);
+    // Fetch services that match filters and are in the top-rated list
+    const services = await Service.find({
+      _id: { $in: serviceIds },
+      ...filter, // ✅ Apply dynamic filters
+    });
 
-  res
-    .status(STATUS.ok)
-    .json(
-      new ApiResponse(STATUS.ok, servicesWithRatings, "fetched top services")
-    );
+    const servicesWithRatings = await integrateRatings(services);
+
+    res
+      .status(STATUS.ok)
+      .json(
+        new ApiResponse(STATUS.ok, servicesWithRatings, "Fetched top services")
+      );
+  } catch (error) {
+    res
+      .status(STATUS.internalServerError)
+      .json(new ApiResponse(STATUS.internalServerError, null, "Server Error"));
+  }
 });
 
 export const getServiceById = asyncHandler(async (req, res) => {
@@ -141,4 +156,30 @@ export const getServiceById = asyncHandler(async (req, res) => {
     );
 });
 
-export const getServicesByCategory = asyncHandler(async (req, res) => {});
+export const getCategroyWiseServices = asyncHandler(async (req, res) => {
+  try {
+    const categories = await Category.find({});
+
+    const categoryWithServices = await Promise.all(
+      categories.map(async (cat) => {
+        const services = await Service.find({ category: cat.id })
+          .sort({ view: -1, createdAt: -1 }) // Prioritize most viewed & recent
+          .limit(10)
+          .populate("category");
+        const servicesWithRating = await integrateRatings(services);
+
+        return { ...cat.toObject(), services: servicesWithRating };
+      })
+    );
+
+    res
+      .status(STATUS.ok)
+      .json(
+        new ApiResponse(STATUS.ok, categoryWithServices, "Fetched successfully")
+      );
+  } catch (error) {
+    res
+      .status(STATUS.notFound)
+      .json(new ApiResponse(STATUS.badGateway, null, "Error"));
+  }
+});

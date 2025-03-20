@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getServicesByCategory = exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
+exports.getCategroyWiseServices = exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const ratingModel_1 = __importDefault(require("../../models/ratingModel"));
@@ -42,6 +42,7 @@ exports.getServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((r
         filter.$or = [
             { title: { $regex: query, $options: "i" } },
             { description: { $regex: query, $options: "i" } },
+            { location: { $regex: query, $options: "i" } },
             { tags: { $regex: query, $options: "i" } },
         ];
     }
@@ -61,27 +62,39 @@ exports.getServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((r
     }));
 })));
 exports.getTopServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const limit = parseInt(req.query.limit) || 10;
-    const topServices = yield ratingModel_1.default.aggregate([
-        {
-            $group: {
-                _id: "$serviceId",
-                avgRating: { $avg: "$rating" },
-                ratingCount: { $sum: 1 },
+    try {
+        const { limit = 10, location, category, status } = req.query;
+        const filter = {}; // Dynamic filter object
+        if (location)
+            filter.location = location;
+        if (category)
+            filter.category = category;
+        if (status)
+            filter.status = status;
+        const topServices = yield ratingModel_1.default.aggregate([
+            {
+                $group: {
+                    _id: "$serviceId",
+                    avgRating: { $avg: "$rating" },
+                    ratingCount: { $sum: 1 },
+                },
             },
-        },
-        { $sort: { avgRating: -1, ratingCount: -1 } },
-        {
-            $limit: limit,
-        },
-    ]);
-    const services = yield serviceModel_1.default.find({
-        _id: { $in: topServices.map((service) => service._id) },
-    });
-    const servicesWithRatings = yield (0, integrateRatings_1.integrateRatings)(services);
-    res
-        .status(statusCodes_1.default.ok)
-        .json(new ApiResponse_1.default(statusCodes_1.default.ok, servicesWithRatings, "fetched top services"));
+            { $sort: { avgRating: -1, ratingCount: -1 } },
+            { $limit: parseInt(limit) },
+        ]);
+        const serviceIds = topServices.map((service) => service._id);
+        // Fetch services that match filters and are in the top-rated list
+        const services = yield serviceModel_1.default.find(Object.assign({ _id: { $in: serviceIds } }, filter));
+        const servicesWithRatings = yield (0, integrateRatings_1.integrateRatings)(services);
+        res
+            .status(statusCodes_1.default.ok)
+            .json(new ApiResponse_1.default(statusCodes_1.default.ok, servicesWithRatings, "Fetched top services"));
+    }
+    catch (error) {
+        res
+            .status(statusCodes_1.default.internalServerError)
+            .json(new ApiResponse_1.default(statusCodes_1.default.internalServerError, null, "Server Error"));
+    }
 }));
 exports.getServiceById = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { serviceId } = req.params;
@@ -118,4 +131,24 @@ exports.getServiceById = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
         .status(200)
         .json(new ApiResponse_1.default(200, Object.assign(Object.assign({}, service), { ratings, ratingAvg }), "Service details fetched"));
 }));
-exports.getServicesByCategory = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () { }));
+exports.getCategroyWiseServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const categories = yield categoryModel_1.default.find({});
+        const categoryWithServices = yield Promise.all(categories.map((cat) => __awaiter(void 0, void 0, void 0, function* () {
+            const services = yield serviceModel_1.default.find({ category: cat.id })
+                .sort({ view: -1, createdAt: -1 }) // Prioritize most viewed & recent
+                .limit(10)
+                .populate("category");
+            const servicesWithRating = yield (0, integrateRatings_1.integrateRatings)(services);
+            return Object.assign(Object.assign({}, cat.toObject()), { services: servicesWithRating });
+        })));
+        res
+            .status(statusCodes_1.default.ok)
+            .json(new ApiResponse_1.default(statusCodes_1.default.ok, categoryWithServices, "Fetched successfully"));
+    }
+    catch (error) {
+        res
+            .status(statusCodes_1.default.notFound)
+            .json(new ApiResponse_1.default(statusCodes_1.default.badGateway, null, "Error"));
+    }
+}));

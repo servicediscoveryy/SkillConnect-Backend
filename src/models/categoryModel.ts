@@ -7,6 +7,11 @@ const CategorySchema = new mongoose.Schema(
       required: true,
       set: (value: string) => value.toLowerCase(),
     },
+
+    image: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

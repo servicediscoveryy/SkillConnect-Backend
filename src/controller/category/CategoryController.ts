@@ -8,10 +8,13 @@ import STATUS from "../../data/statusCodes";
 // Create a new category
 export const createCategory = asyncHandler(
   async (req: Request, res: Response) => {
-    const { category } = req.body;
+    const { category, image } = req.body;
 
-    if (!category) {
-      throw new ApiError(STATUS.badRequest, "Category name is required");
+    if (!category || !image) {
+      throw new ApiError(
+        STATUS.badRequest,
+        "Category name & Image is required"
+      );
     }
 
     const existingCategory = await Category.findOne({ category });
@@ -19,7 +22,7 @@ export const createCategory = asyncHandler(
       throw new ApiError(STATUS.conflict, "Category already exists");
     }
 
-    const newCategory = new Category({ category: category });
+    const newCategory = new Category({ category: category, image: image });
     const savedCategory = await newCategory.save();
 
     res

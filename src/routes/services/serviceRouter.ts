@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getCategroyWiseServices,
   getServiceById,
   getServices,
   getTopServices,
@@ -10,6 +11,8 @@ const servicesRouter = express.Router();
 servicesRouter.get("/", getServices);
 
 servicesRouter.get("/top", getTopServices);
+
+servicesRouter.get("/categroy-wise-services", getCategroyWiseServices);
 
 servicesRouter.get("/:serviceId", getServiceById);
 
