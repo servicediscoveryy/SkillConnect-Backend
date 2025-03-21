@@ -2,17 +2,23 @@ import express from "express";
 import {
   getProfileController,
   providerSignupController,
-  userLoginController,
+  sendOtpController,
+  storeSignUpController,
   userLogoutController,
   userSignupController,
+  verifyOtpController,
 } from "../../controller/auth/authController";
 import { authuser } from "../../middleware/authMiddleware";
 
 const userRouter = express.Router();
 
-userRouter.post("/login", userLoginController);
+userRouter.post("/login", sendOtpController);
+
+userRouter.post("/verify", verifyOtpController);
 
 userRouter.post("/signup", userSignupController);
+
+userRouter.post("/store-user", storeSignUpController);
 
 userRouter.post("/provider-signup", providerSignupController);
 

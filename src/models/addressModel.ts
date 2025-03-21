@@ -16,6 +16,7 @@ const addressSchema = new mongoose.Schema(
       type: String,
       set: (value: string) => value.toLowerCase(),
     },
+    
     city: {
       type: String,
       required: true,

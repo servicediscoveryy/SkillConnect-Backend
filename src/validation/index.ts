@@ -13,7 +13,6 @@ const signupSchema = Joi.object({
     .pattern(/^[0-9]{10}$/)
     .required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).max(30).required(),
 });
 
 const validateRequest = (schema: ObjectSchema, data: any) => {

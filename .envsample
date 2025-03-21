@@ -1,0 +1,5 @@
+MONGO_URI="your url"
+
+PORT=3000
+
+JWT_SECRET="your url"

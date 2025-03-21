@@ -17,19 +17,16 @@ const userSchema = new Schema<IUser>(
   {
     firstName: {
       type: String,
-      required: true,
       set: (value: string) => value.toLowerCase(),
     },
     lastName: {
       type: String,
-      required: true,
       set: (value: string) => value.toLowerCase(),
     },
+
     phone: {
       type: String,
-      required: true,
       unique: true,
-      set: (value: string) => value.toLowerCase(),
     },
     email: {
       type: String,
@@ -37,10 +34,7 @@ const userSchema = new Schema<IUser>(
       unique: true,
       set: (value: string) => value.toLowerCase(),
     },
-    password: {
-      type: String,
-      required: true,
-    },
+
     role: {
       type: String,
       enum: ["user", "admin", "provider"],
@@ -55,18 +49,5 @@ const userSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Hash password before saving to the database
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
-
-// Method to compare password during login
-userSchema.methods.comparePassword = async function (password: string) {
-  return await bcrypt.compare(password, this.password);
-};
-
-// Create User model
 const User = mongoose.model<IUser>("User", userSchema);
 export default User;

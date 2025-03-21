@@ -25,6 +25,7 @@ const serviceSchema = new mongoose.Schema(
 
     image: { type: [String], default: [] },
     price: { type: Number, required: true, min: 0 },
+    
     status: {
       type: String,
       enum: ["active", "inactive"],

@@ -18,7 +18,6 @@ const signupSchema = joi_1.default.object({
         .pattern(/^[0-9]{10}$/)
         .required(),
     email: joi_1.default.string().email().required(),
-    password: joi_1.default.string().min(6).max(30).required(),
 });
 exports.signupSchema = signupSchema;
 const validateRequest = (schema, data) => {
