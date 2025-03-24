@@ -18,6 +18,8 @@ bookingRouter.get(
   isServiceProvider,
   getProviderBookings
 );
+
+
 bookingRouter.get("/:bookingId", authuser, getBookingById);
 bookingRouter.get("/", authuser, getUserBookings);
 bookingRouter.put("/:bookingId", authuser, updateBookingStatus);
