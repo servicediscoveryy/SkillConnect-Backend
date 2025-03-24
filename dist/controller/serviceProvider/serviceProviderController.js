@@ -32,10 +32,10 @@ exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Choose Right Category");
     }
     const newService = new serviceModel_1.default({
-        providerId: req.user._id,
+        providerId: "67db1307330a765af9d93e4a",
         title,
         description,
-        category,
+        category: "67db12bd330a765af9d93e42",
         image,
         price,
         status: "active",
@@ -107,13 +107,19 @@ exports.getProviderServiceById = (0, asyncHandler_1.default)((req, res) => __awa
         // Find service by ID and populate category
         const service = yield serviceModel_1.default.findById(id).populate("category", "category");
         if (!service) {
-            return res.status(statusCodes_1.default.notFound).json(new ApiResponse_1.default(statusCodes_1.default.notFound, null, "Service not found"));
+            return res
+                .status(statusCodes_1.default.notFound)
+                .json(new ApiResponse_1.default(statusCodes_1.default.notFound, null, "Service not found"));
         }
-        res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, service, "Service fetched successfully"));
+        res
+            .status(statusCodes_1.default.ok)
+            .json(new ApiResponse_1.default(statusCodes_1.default.ok, service, "Service fetched successfully"));
     }
     catch (error) {
         console.error("Error fetching service:", error);
-        res.status(statusCodes_1.default.serverError).json(new ApiResponse_1.default(statusCodes_1.default.serverError, null, "Internal server error"));
+        res
+            .status(statusCodes_1.default.serverError)
+            .json(new ApiResponse_1.default(statusCodes_1.default.serverError, null, "Internal server error"));
     }
 }));
 // Rate a service

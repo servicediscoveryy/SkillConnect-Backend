@@ -6,6 +6,7 @@ const generateOTP = () =>
 
 const storeOTP = async (email: string) => {
   const otp = generateOTP();
+  console.log(otp);
   await redisClient.setEx(`otp:${email}`, 300, otp); // Store OTP with 5 min expiry
   return otp;
 };

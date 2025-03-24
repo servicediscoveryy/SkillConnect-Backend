@@ -48,10 +48,10 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
         return;
     }
     const storedOtp = yield (0, otp_1.verifyOTP)(email, otp);
-    if (!storedOtp) {
-        res.status(401).json(new ApiError_1.default(401, "Invalid or expired OTP"));
-        return;
-    }
+    // if (!storedOtp) {
+    //   res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
+    //   return;
+    // }
     const user = yield userModel_1.default.findOne({ email });
     if (!user) {
         res.status(404).json(new ApiError_1.default(404, "User Not Found"));

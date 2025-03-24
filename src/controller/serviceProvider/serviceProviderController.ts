@@ -33,10 +33,10 @@ export const createService = asyncHandler(
     }
 
     const newService = new Service({
-      providerId: req.user._id,
+      providerId: "67db1307330a765af9d93e4a",
       title,
       description,
-      category,
+      category: "67db12bd330a765af9d93e42",
       image,
       price,
       status: "active",
@@ -146,22 +146,29 @@ export const getProviderServiceById = asyncHandler(
 
     try {
       // Find service by ID and populate category
-      const service = await Service.findById(id).populate("category", "category");
+      const service = await Service.findById(id).populate(
+        "category",
+        "category"
+      );
 
       if (!service) {
-        return res.status(STATUS.notFound).json(
-          new ApiResponse(STATUS.notFound, null, "Service not found")
-        );
+        return res
+          .status(STATUS.notFound)
+          .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
       }
 
-      res.status(STATUS.ok).json(
-        new ApiResponse(STATUS.ok, service, "Service fetched successfully")
-      );
+      res
+        .status(STATUS.ok)
+        .json(
+          new ApiResponse(STATUS.ok, service, "Service fetched successfully")
+        );
     } catch (error) {
       console.error("Error fetching service:", error);
-      res.status(STATUS.serverError).json(
-        new ApiResponse(STATUS.serverError, null, "Internal server error")
-      );
+      res
+        .status(STATUS.serverError)
+        .json(
+          new ApiResponse(STATUS.serverError, null, "Internal server error")
+        );
     }
   }
 );

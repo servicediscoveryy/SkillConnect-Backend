@@ -18,6 +18,7 @@ const redisClient_1 = __importDefault(require("../../database/redisClient"));
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 const storeOTP = (email) => __awaiter(void 0, void 0, void 0, function* () {
     const otp = generateOTP();
+    console.log(otp);
     yield redisClient_1.default.setEx(`otp:${email}`, 300, otp); // Store OTP with 5 min expiry
     return otp;
 });
