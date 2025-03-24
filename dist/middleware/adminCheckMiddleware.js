@@ -12,14 +12,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.dbconnect = void 0;
-const mongoose_1 = __importDefault(require("mongoose"));
-const dbconnect = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield mongoose_1.default.connect(process.env.MONGO_URI);
+exports.isAdminCheck = void 0;
+const asyncHandler_1 = __importDefault(require("../utils/asyncHandler"));
+const ApiError_1 = __importDefault(require("../utils/response/ApiError"));
+exports.isAdminCheck = (0, asyncHandler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.user || req.user.role !== "admin") {
+        return next(new ApiError_1.default(403, "You are not authorized to perform this action"));
     }
-    catch (error) {
-        console.log(error);
-    }
-});
-exports.dbconnect = dbconnect;
+    return next();
+}));

@@ -33,10 +33,10 @@ export const createService = asyncHandler(
     }
 
     const newService = new Service({
-      providerId: req.user._id,
+      providerId: "67db1307330a765af9d93e4a",
       title,
       description,
-      category,
+      category: "67db12bd330a765af9d93e42",
       image,
       price,
       status: "active",
@@ -94,6 +94,85 @@ export const deleteService = asyncHandler(
   }
 );
 
+// Get all services by serach category
+export const getProviderServices = asyncHandler(
+  asyncHandler(async (req: RequestWithUser, res) => {
+    // const { id } = req?.user;
+    const id = "67db1307330a765af9d93e4a";
+    const { category, query } = req.query; // Using query params for both category and search query
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const filter: any = { providerId: id, status: "active" }; // Default filter by status
+
+    // Add category filter if category is provided in the query
+    if (category) {
+      filter.category = category;
+    }
+
+    // Add search filter if query is provided in the query
+    if (query) {
+      filter.$or = [
+        { title: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { category: { $regex: query, $options: "i" } },
+        { tags: { $regex: query, $options: "i" } },
+      ];
+    }
+
+    const totalServices = await Service.countDocuments(filter); // Get total count based on filters
+
+    // Fetch paginated services based on the filter
+    const services = await Service.find(filter)
+      .populate("category", "category")
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    // Send the response with pagination info
+    res.status(STATUS.ok).json(
+      new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
+        totalPages: Math.ceil(totalServices / limit),
+        currentPage: page,
+        pageSize: limit,
+        totalItems: totalServices,
+      })
+    );
+  })
+);
+
+export const getProviderServiceById = asyncHandler(
+  async (req: RequestWithUser, res) => {
+    const { id } = req.params;
+
+    try {
+      // Find service by ID and populate category
+      const service = await Service.findById(id).populate(
+        "category",
+        "category"
+      );
+
+      if (!service) {
+        return res
+          .status(STATUS.notFound)
+          .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
+      }
+
+      res
+        .status(STATUS.ok)
+        .json(
+          new ApiResponse(STATUS.ok, service, "Service fetched successfully")
+        );
+    } catch (error) {
+      console.error("Error fetching service:", error);
+      res
+        .status(STATUS.serverError)
+        .json(
+          new ApiResponse(STATUS.serverError, null, "Internal server error")
+        );
+    }
+  }
+);
+
 // Rate a service
 export const rateService = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
@@ -135,48 +214,4 @@ export const rateService = asyncHandler(
       .status(201)
       .json(new ApiResponse(201, newRating, "Service rated successfully"));
   }
-);
-
-// Get all services by serach category
-export const getProviderServices = asyncHandler(
-  asyncHandler(async (req: RequestWithUser, res) => {
-    const { id } = req?.user;
-    const { category, query } = req.query; // Using query params for both category and search query
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const filter: any = { providerId: id, status: "active" }; // Default filter by status
-
-    // Add category filter if category is provided in the query
-    if (category) {
-      filter.category = category;
-    }
-
-    // Add search filter if query is provided in the query
-    if (query) {
-      filter.$or = [
-        { title: { $regex: query, $options: "i" } },
-        { description: { $regex: query, $options: "i" } },
-        { category: { $regex: query, $options: "i" } },
-        { tags: { $regex: query, $options: "i" } },
-      ];
-    }
-
-    const totalServices = await Service.countDocuments(filter); // Get total count based on filters
-
-    // Fetch paginated services based on the filter
-    const services = await Service.find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    // Send the response with pagination info
-    res.status(STATUS.ok).json(
-      new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
-        totalPages: Math.ceil(totalServices / limit),
-        currentPage: page,
-        pageSize: limit,
-        totalItems: totalServices,
-      })
-    );
-  })
 );

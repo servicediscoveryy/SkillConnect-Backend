@@ -10,22 +10,20 @@ const serviceSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      set: (value: string) => value.toLowerCase(),
+      set: (value: string | undefined) => (value ? value.toLowerCase() : ""),
     },
     description: {
       type: String,
       required: true,
-      set: (value: string) => value.toLowerCase(),
+      set: (value: string | undefined) => (value ? value.toLowerCase() : ""),
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",
       required: true,
     },
-
     image: { type: [String], default: [] },
     price: { type: Number, required: true, min: 0 },
-    
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -36,11 +34,12 @@ const serviceSchema = new mongoose.Schema(
     location: {
       type: String,
       required: true,
-      set: (value: string) => value.toLowerCase(),
+      set: (value: string | undefined) => (value ? value.toLowerCase() : ""),
     },
     tags: {
       type: [String],
-      set: (tags: string[]) => tags.map((tag) => tag.toLowerCase()),
+      set: (tags: string[] | undefined) =>
+        tags ? tags.map((tag) => tag.toLowerCase()) : [],
     },
   },
   { timestamps: true }

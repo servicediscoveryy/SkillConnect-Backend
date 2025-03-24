@@ -2,6 +2,7 @@ import express from "express";
 import {
   createService,
   deleteService,
+  getProviderServiceById,
   getProviderServices,
   rateService,
   updateService,
@@ -14,26 +15,37 @@ const serviceProviderRouter = express.Router();
 // Fetch all services
 serviceProviderRouter.get(
   "/",
-  authuser,
-  isServiceProvider,
+  // authuser,
+  // isServiceProvider,
   getProviderServices
+);
+serviceProviderRouter.get(
+  "/:id",
+  // authuser,
+  // isServiceProvider,
+  getProviderServiceById
 );
 
 // Create a new service
-serviceProviderRouter.post("/", authuser, isServiceProvider, createService);
+serviceProviderRouter.post(
+  "/",
+  // authuser,
+  //  isServiceProvider,
+  createService
+);
 
 // Update a service
 serviceProviderRouter.patch(
   "/:serviceId",
-  authuser,
-  isServiceProvider,
+  // authuser,
+  // isServiceProvider,
   updateService
 );
 
 serviceProviderRouter.delete(
-  "/serviceId",
-  authuser,
-  isServiceProvider,
+  "/:serviceId",
+  // authuser,
+  // isServiceProvider,
   deleteService
 );
 

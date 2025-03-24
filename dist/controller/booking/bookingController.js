@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.cancelBooking = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
+exports.getProviderBookings = exports.cancelBooking = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -30,6 +30,14 @@ exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     if (!mongoose_1.default.Types.ObjectId.isValid(serviceId) ||
         !mongoose_1.default.Types.ObjectId.isValid(addressId)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid Fields");
+    }
+    // check the user has already booked the service
+    const isBookingExist = yield bookingModel_1.default.findOne({
+        addressId: addressId,
+        serviceId: serviceId,
+    });
+    if (isBookingExist) {
+        throw new ApiError_1.default(statusCodes_1.default.found, "Service is Already Booked");
     }
     const service = yield serviceModel_1.default.findById(serviceId);
     if (!service) {
@@ -112,6 +120,7 @@ exports.getUserBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
     const bookings = yield bookingModel_1.default.find({ userId: req.user._id })
         .populate("serviceId", "title category price")
+        .populate("addressId") // Populating address details
         .sort({ createdAt: -1 });
     res
         .status(statusCodes_1.default.ok)
@@ -120,17 +129,44 @@ exports.getUserBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
 // Update Booking Status
 exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookingId } = req.params;
-    const { status } = req.body;
-    const validStatuses = ["pending", "completed", "cancelled"];
-    if (!validStatuses.includes(status)) {
-        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid status value");
-    }
-    const updatedBooking = yield bookingModel_1.default.findByIdAndUpdate(bookingId, { orderStatus: status }, { new: true });
-    if (!updatedBooking)
+    const { orderStatus, paymentStatus } = req.body;
+    const validOrderStatuses = ["pending", "completed", "cancelled"];
+    const validPaymentStatuses = ["created", "captured", "failed", "pending"];
+    const booking = yield bookingModel_1.default.findById(bookingId);
+    if (!booking)
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Booking not found");
+    // Validate order status
+    if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid order status value");
+    }
+    // Validate payment status
+    if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid payment status value");
+    }
+    // ❌ Prevent marking order as "completed" if payment isn't captured
+    if (orderStatus === "completed" && booking.paymentStatus !== "captured") {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Order cannot be marked as completed until payment is captured");
+    }
+    // ✅ If payment is captured, order can be completed
+    if (paymentStatus === "captured") {
+        booking.paymentStatus = "captured";
+        if (booking.orderStatus === "pending") {
+            booking.orderStatus = "completed";
+        }
+    }
+    // ✅ If payment failed, order should remain pending or be cancelled
+    if (paymentStatus === "failed") {
+        booking.paymentStatus = "failed";
+        booking.orderStatus = "pending"; // Don't complete if payment failed
+    }
+    // ✅ Allow updating order status if valid
+    if (orderStatus) {
+        booking.orderStatus = orderStatus;
+    }
+    yield booking.save();
     res
         .status(statusCodes_1.default.ok)
-        .json(new ApiResponse_1.default(statusCodes_1.default.ok, updatedBooking, "Booking status updated"));
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, booking, "Booking status updated"));
 }));
 // cancel a Booking
 exports.cancelBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -144,4 +180,22 @@ exports.cancelBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     res
         .status(statusCodes_1.default.ok)
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, {}, "Booking cancelled successfully"));
+}));
+// providers booking
+exports.getProviderBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.user)
+        throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
+    // Get all services offered by the provider
+    const providerServices = yield serviceModel_1.default.find({ providerId: req.user._id });
+    // Extract service IDs
+    const serviceIds = providerServices.map((service) => service._id);
+    // Find bookings for those services
+    const bookings = yield bookingModel_1.default.find({ serviceId: { $in: serviceIds } })
+        .populate("serviceId", "title category price")
+        .populate("userId", "name email") // Populate user info
+        .populate("addressId") // Populate address details
+        .sort({ createdAt: -1 });
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, bookings, "Provider bookings fetched"));
 }));

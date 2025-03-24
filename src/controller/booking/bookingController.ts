@@ -23,6 +23,16 @@ export const createBooking = asyncHandler(
       throw new ApiError(STATUS.badRequest, "Invalid Fields");
     }
 
+    // check the user has already booked the service
+
+    const isBookingExist = await Booking.findOne({
+      addressId: addressId,
+      serviceId: serviceId,
+    });
+
+    if (isBookingExist) {
+      throw new ApiError(STATUS.found, "Service is Already Booked");
+    }
     const service = await Service.findById(serviceId);
 
     if (!service) {
@@ -128,6 +138,8 @@ export const getUserBookings = asyncHandler(
 
     const bookings = await Booking.find({ userId: req.user._id })
       .populate("serviceId", "title category price")
+      .populate("addressId") // Populating address details
+
       .sort({ createdAt: -1 });
 
     res
@@ -140,27 +152,56 @@ export const getUserBookings = asyncHandler(
 export const updateBookingStatus = asyncHandler(
   async (req: Request, res: Response) => {
     const { bookingId } = req.params;
-    const { status } = req.body;
+    const { orderStatus, paymentStatus } = req.body;
 
-    const validStatuses = ["pending", "completed", "cancelled"];
-    if (!validStatuses.includes(status)) {
-      throw new ApiError(STATUS.badRequest, "Invalid status value");
+    const validOrderStatuses = ["pending", "completed", "cancelled"];
+    const validPaymentStatuses = ["created", "captured", "failed", "pending"];
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) throw new ApiError(STATUS.notFound, "Booking not found");
+
+    // Validate order status
+    if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
+      throw new ApiError(STATUS.badRequest, "Invalid order status value");
     }
 
-    const updatedBooking = await Booking.findByIdAndUpdate(
-      bookingId,
-      { orderStatus: status },
-      { new: true }
-    );
+    // Validate payment status
+    if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+      throw new ApiError(STATUS.badRequest, "Invalid payment status value");
+    }
 
-    if (!updatedBooking)
-      throw new ApiError(STATUS.notFound, "Booking not found");
+    // ❌ Prevent marking order as "completed" if payment isn't captured
+    if (orderStatus === "completed" && booking.paymentStatus !== "captured") {
+      throw new ApiError(
+        STATUS.badRequest,
+        "Order cannot be marked as completed until payment is captured"
+      );
+    }
+
+    // ✅ If payment is captured, order can be completed
+    if (paymentStatus === "captured") {
+      booking.paymentStatus = "captured";
+      if (booking.orderStatus === "pending") {
+        booking.orderStatus = "completed";
+      }
+    }
+
+    // ✅ If payment failed, order should remain pending or be cancelled
+    if (paymentStatus === "failed") {
+      booking.paymentStatus = "failed";
+      booking.orderStatus = "pending"; // Don't complete if payment failed
+    }
+
+    // ✅ Allow updating order status if valid
+    if (orderStatus) {
+      booking.orderStatus = orderStatus;
+    }
+
+    await booking.save();
 
     res
       .status(STATUS.ok)
-      .json(
-        new ApiResponse(STATUS.ok, updatedBooking, "Booking status updated")
-      );
+      .json(new ApiResponse(STATUS.ok, booking, "Booking status updated"));
   }
 );
 
@@ -179,5 +220,30 @@ export const cancelBooking = asyncHandler(
     res
       .status(STATUS.ok)
       .json(new ApiResponse(STATUS.ok, {}, "Booking cancelled successfully"));
+  }
+);
+
+// providers booking
+
+export const getProviderBookings = asyncHandler(
+  async (req: RequestWithUser, res: Response) => {
+    if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+
+    // Get all services offered by the provider
+    const providerServices = await Service.find({ providerId: req.user._id });
+
+    // Extract service IDs
+    const serviceIds = providerServices.map((service) => service._id);
+
+    // Find bookings for those services
+    const bookings = await Booking.find({ serviceId: { $in: serviceIds } })
+      .populate("serviceId", "title category price")
+      .populate("userId", "name email") // Populate user info
+      .populate("addressId") // Populate address details
+      .sort({ createdAt: -1 });
+
+    res
+      .status(STATUS.ok)
+      .json(new ApiResponse(STATUS.ok, bookings, "Provider bookings fetched"));
   }
 );

@@ -9,17 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isServiceProvider = void 0;
-const isServiceProvider = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // @ts-ignore
-        if (req.user.role !== 'provider') {
-            return res.status(403).json({ message: "You are not authorized to perform this action", success: false, error: true });
-        }
-        next();
-    }
-    catch (error) {
-        res.status(500).json({ error: true, success: false, message: error.message });
-    }
+const redis_1 = require("redis");
+const redisClient = (0, redis_1.createClient)({
+    url: "redis://127.0.0.1:6379",
 });
-exports.isServiceProvider = isServiceProvider;
+redisClient.on("error", (err) => console.error("Redis Error: ", err));
+(() => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield redisClient.connect();
+        console.log("Connected to Redis");
+    }
+    catch (err) {
+        console.error("Redis connection error:", err);
+    }
+}))();
+exports.default = redisClient;
