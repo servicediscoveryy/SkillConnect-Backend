@@ -16,7 +16,7 @@ import { storeOTP, verifyOTP } from "../../utils/notification/otp";
 export const sendOtpController = asyncHandler(
   async (req: Request, res: Response) => {
     const { email } = req.body;
-
+    console.log(req.body);
     // Check if user exists
     const user = await User.findOne({ email });
 
@@ -44,7 +44,7 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
     return;
   }
 
-  const storedOtp = await verifyOTP(email, otp);
+  // const storedOtp = await verifyOTP(email, otp);
 
   // if (!storedOtp) {
   //   res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
@@ -62,6 +62,7 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
     userId: user._id,
     email: user.email,
     role: user.role,
+    picture: user.profilePicture,
   };
 
   const jwtToken = jwt.sign(payload, process.env.JWT_SECRET as string, {

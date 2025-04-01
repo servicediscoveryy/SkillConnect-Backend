@@ -11,6 +11,7 @@ import { isServiceProvider } from "../../middleware/providerCheckMiddleware";
 
 const bookingRouter = express.Router();
 
+bookingRouter.put("/:bookingId", authuser, updateBookingStatus);
 bookingRouter.post("/", authuser, createBooking);
 bookingRouter.get(
   "/provider",
@@ -20,6 +21,5 @@ bookingRouter.get(
 );
 bookingRouter.get("/:bookingId", authuser, getBookingById);
 bookingRouter.get("/", authuser, getUserBookings);
-bookingRouter.put("/:bookingId", authuser, updateBookingStatus);
 
 export default bookingRouter;

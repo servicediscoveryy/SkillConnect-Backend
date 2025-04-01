@@ -32,10 +32,10 @@ exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Choose Right Category");
     }
     const newService = new serviceModel_1.default({
-        providerId: "67db1307330a765af9d93e4a",
+        providerId: req.user._id,
         title,
         description,
-        category: "67db12bd330a765af9d93e42",
+        category: category,
         image,
         price,
         status: "active",
@@ -68,8 +68,8 @@ exports.deleteService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 }));
 // Get all services by serach category
 exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // const { id } = req?.user;
-    const id = "67db1307330a765af9d93e4a";
+    const id = req === null || req === void 0 ? void 0 : req.user._id;
+    console.log("services", id);
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -93,6 +93,7 @@ exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.def
         .populate("category", "category")
         .skip((page - 1) * limit)
         .limit(limit);
+    console.log(services);
     // Send the response with pagination info
     res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, services, "Services fetched successfully", {
         totalPages: Math.ceil(totalServices / limit),

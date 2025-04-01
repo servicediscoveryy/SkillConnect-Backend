@@ -33,10 +33,10 @@ export const createService = asyncHandler(
     }
 
     const newService = new Service({
-      providerId: "67db1307330a765af9d93e4a",
+      providerId: req.user._id,
       title,
       description,
-      category: "67db12bd330a765af9d93e42",
+      category: category,
       image,
       price,
       status: "active",
@@ -97,8 +97,8 @@ export const deleteService = asyncHandler(
 // Get all services by serach category
 export const getProviderServices = asyncHandler(
   asyncHandler(async (req: RequestWithUser, res) => {
-    // const { id } = req?.user;
-    const id = "67db1307330a765af9d93e4a";
+    const id = req?.user._id;
+    console.log("services", id);
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -127,7 +127,7 @@ export const getProviderServices = asyncHandler(
       .populate("category", "category")
       .skip((page - 1) * limit)
       .limit(limit);
-
+    console.log(services);
     // Send the response with pagination info
     res.status(STATUS.ok).json(
       new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
