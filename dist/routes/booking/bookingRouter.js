@@ -13,4 +13,6 @@ bookingRouter.post("/", authMiddleware_1.authuser, bookingController_1.createBoo
 bookingRouter.get("/provider", authMiddleware_1.authuser, providerCheckMiddleware_1.isServiceProvider, bookingController_1.getProviderBookings);
 bookingRouter.get("/:bookingId", authMiddleware_1.authuser, bookingController_1.getBookingById);
 bookingRouter.get("/", authMiddleware_1.authuser, bookingController_1.getUserBookings);
+bookingRouter.post("/booking-otp", bookingController_1.GenerateOtpBookingComplete);
+bookingRouter.post("/booking-otp/verify", bookingController_1.CompleteBooking);
 exports.default = bookingRouter;

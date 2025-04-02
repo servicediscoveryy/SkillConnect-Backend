@@ -1,7 +1,9 @@
 import express from "express";
 import { authuser } from "../../middleware/authMiddleware";
 import {
+  CompleteBooking,
   createBooking,
+  GenerateOtpBookingComplete,
   getBookingById,
   getProviderBookings,
   getUserBookings,
@@ -21,5 +23,8 @@ bookingRouter.get(
 );
 bookingRouter.get("/:bookingId", authuser, getBookingById);
 bookingRouter.get("/", authuser, getUserBookings);
+
+bookingRouter.post("/booking-otp", GenerateOtpBookingComplete);
+bookingRouter.post("/booking-otp/verify", CompleteBooking);
 
 export default bookingRouter;

@@ -44,12 +44,12 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
     return;
   }
 
-  // const storedOtp = await verifyOTP(email, otp);
+  const storedOtp = await verifyOTP(email, otp);
 
-  // if (!storedOtp) {
-  //   res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
-  //   return;
-  // }
+  if (!storedOtp) {
+    res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
+    return;
+  }
 
   const user = await User.findOne({ email });
 

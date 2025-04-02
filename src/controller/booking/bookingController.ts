@@ -10,6 +10,7 @@ import Payment from "../../models/paymentModel";
 import Service from "../../models/serviceModel";
 import Address from "../../models/addressModel";
 import { sendEmail } from "../../utils/notification/email";
+import { storeOTP, verifyOTP } from "../../utils/notification/otp";
 
 // Create a Booking
 export const createBooking = asyncHandler(
@@ -412,5 +413,57 @@ export const getProviderBookings = asyncHandler(
     res
       .status(STATUS.ok)
       .json(new ApiResponse(STATUS.ok, bookings, "Provider bookings fetched"));
+  }
+);
+
+export const GenerateOtpBookingComplete = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { bookingId } = req.body;
+
+    const booking = await Booking.findById(bookingId).populate("userId");
+    // @ts-ignore
+    if (booking?.orderStatus === "completed") {
+      throw new ApiError(STATUS.badRequest, "Invalid Operation");
+    }
+    if (!booking) throw new ApiError(STATUS.notFound, "Booking not found");
+    const otp = await storeOTP(bookingId);
+    // @ts-ignore
+    sendEmail(booking.userId.email, "Otp Verification", otp);
+    console.log(`OTP for ${bookingId}: ${otp}`);
+
+    res
+      .status(STATUS.ok)
+      .json(new ApiResponse(STATUS.ok, "Otp Sent SuccessFully To user"));
+  }
+);
+
+export const CompleteBooking = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { bookingId, otp } = req.body;
+
+    const booking = await Booking.findById(bookingId).populate("userId");
+    if (!booking) throw new ApiError(STATUS.notFound, "Booking not found");
+    const storedOtp = await verifyOTP(bookingId, otp);
+
+    if (!storedOtp) {
+      res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
+      return;
+    }
+
+    if (storedOtp) {
+      booking.paymentStatus = "captured";
+      booking.orderStatus = "completed";
+      sendEmail(
+        // @ts-ignore
+        booking.userId.email,
+        "Your Booking Has Completed Please share the feedBack on services",
+        otp
+      );
+      await booking.save();
+    }
+
+    res
+      .status(STATUS.ok)
+      .json(new ApiResponse(STATUS.ok, booking, "Booking status updated"));
   }
 );

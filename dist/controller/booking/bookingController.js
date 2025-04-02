@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProviderBookings = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
+exports.CompleteBooking = exports.GenerateOtpBookingComplete = exports.getProviderBookings = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -23,6 +23,7 @@ const paymentModel_1 = __importDefault(require("../../models/paymentModel"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
 const addressModel_1 = __importDefault(require("../../models/addressModel"));
 const email_1 = require("../../utils/notification/email");
+const otp_1 = require("../../utils/notification/otp");
 // Create a Booking
 exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { serviceId, addressId } = req.body;
@@ -342,4 +343,43 @@ exports.getProviderBookings = (0, asyncHandler_1.default)((req, res) => __awaite
     res
         .status(statusCodes_1.default.ok)
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, bookings, "Provider bookings fetched"));
+}));
+exports.GenerateOtpBookingComplete = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { bookingId } = req.body;
+    const booking = yield bookingModel_1.default.findById(bookingId).populate("userId");
+    // @ts-ignore
+    if ((booking === null || booking === void 0 ? void 0 : booking.orderStatus) === "completed") {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid Operation");
+    }
+    if (!booking)
+        throw new ApiError_1.default(statusCodes_1.default.notFound, "Booking not found");
+    const otp = yield (0, otp_1.storeOTP)(bookingId);
+    // @ts-ignore
+    (0, email_1.sendEmail)(booking.userId.email, "Otp Verification", otp);
+    console.log(`OTP for ${bookingId}: ${otp}`);
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, "Otp Sent SuccessFully To user"));
+}));
+exports.CompleteBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { bookingId, otp } = req.body;
+    const booking = yield bookingModel_1.default.findById(bookingId).populate("userId");
+    if (!booking)
+        throw new ApiError_1.default(statusCodes_1.default.notFound, "Booking not found");
+    const storedOtp = yield (0, otp_1.verifyOTP)(bookingId, otp);
+    if (!storedOtp) {
+        res.status(401).json(new ApiError_1.default(401, "Invalid or expired OTP"));
+        return;
+    }
+    if (storedOtp) {
+        booking.paymentStatus = "captured";
+        booking.orderStatus = "completed";
+        (0, email_1.sendEmail)(
+        // @ts-ignore
+        booking.userId.email, "Your Booking Has Completed Please share the feedBack on services", otp);
+        yield booking.save();
+    }
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, booking, "Booking status updated"));
 }));
