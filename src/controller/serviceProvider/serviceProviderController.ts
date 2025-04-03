@@ -12,6 +12,7 @@ import {
   validateRequest,
 } from "../../validation";
 import mongoose from "mongoose";
+import { getUsersWhoBookedProviderServices } from "../../services/userServices";
 
 // Create a new service
 export const createService = asyncHandler(
@@ -36,7 +37,7 @@ export const createService = asyncHandler(
       providerId: req.user._id,
       title,
       description,
-      category,
+      category: category,
       image,
       price,
       status: "active",
@@ -94,6 +95,85 @@ export const deleteService = asyncHandler(
   }
 );
 
+// Get all services by serach category
+export const getProviderServices = asyncHandler(
+  asyncHandler(async (req: RequestWithUser, res) => {
+    const id = req?.user._id;
+    console.log("services", id);
+    const { category, query } = req.query; // Using query params for both category and search query
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const filter: any = { providerId: id, status: "active" }; // Default filter by status
+
+    // Add category filter if category is provided in the query
+    if (category) {
+      filter.category = category;
+    }
+
+    // Add search filter if query is provided in the query
+    if (query) {
+      filter.$or = [
+        { title: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { category: { $regex: query, $options: "i" } },
+        { tags: { $regex: query, $options: "i" } },
+      ];
+    }
+
+    const totalServices = await Service.countDocuments(filter); // Get total count based on filters
+
+    // Fetch paginated services based on the filter
+    const services = await Service.find(filter)
+      .populate("category", "category")
+      .skip((page - 1) * limit)
+      .limit(limit);
+    console.log(services);
+    // Send the response with pagination info
+    res.status(STATUS.ok).json(
+      new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
+        totalPages: Math.ceil(totalServices / limit),
+        currentPage: page,
+        pageSize: limit,
+        totalItems: totalServices,
+      })
+    );
+  })
+);
+
+export const getProviderServiceById = asyncHandler(
+  async (req: RequestWithUser, res) => {
+    const { id } = req.params;
+
+    try {
+      // Find service by ID and populate category
+      const service = await Service.findById(id).populate(
+        "category",
+        "category"
+      );
+
+      if (!service) {
+        return res
+          .status(STATUS.notFound)
+          .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
+      }
+
+      res
+        .status(STATUS.ok)
+        .json(
+          new ApiResponse(STATUS.ok, service, "Service fetched successfully")
+        );
+    } catch (error: any) {
+      console.error("Error fetching service:", error);
+      res
+        .status(STATUS.badRequest)
+        .json(
+          new ApiResponse(STATUS.badRequest, null, "Internal server error")
+        );
+    }
+  }
+);
+
 // Rate a service
 export const rateService = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
@@ -137,46 +217,30 @@ export const rateService = asyncHandler(
   }
 );
 
-// Get all services by serach category
-export const getProviderServices = asyncHandler(
-  asyncHandler(async (req: RequestWithUser, res) => {
-    const { id } = req?.user;
-    const { category, query } = req.query; // Using query params for both category and search query
+export const getUsersForProviderBookings = asyncHandler(
+  async (req: RequestWithUser, res: Response) => {
+    if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-
-    const filter: any = { providerId: id, status: "active" }; // Default filter by status
-
-    // Add category filter if category is provided in the query
-    if (category) {
-      filter.category = category;
-    }
-
-    // Add search filter if query is provided in the query
-    if (query) {
-      filter.$or = [
-        { title: { $regex: query, $options: "i" } },
-        { description: { $regex: query, $options: "i" } },
-        { category: { $regex: query, $options: "i" } },
-        { tags: { $regex: query, $options: "i" } },
-      ];
-    }
-
-    const totalServices = await Service.countDocuments(filter); // Get total count based on filters
-
-    // Fetch paginated services based on the filter
-    const services = await Service.find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    // Send the response with pagination info
-    res.status(STATUS.ok).json(
-      new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
-        totalPages: Math.ceil(totalServices / limit),
-        currentPage: page,
-        pageSize: limit,
-        totalItems: totalServices,
-      })
+    console.log("INSIDE THE BOOKINGS USERS");
+    const { users, totalUsers } = await getUsersWhoBookedProviderServices(
+      req.user._id,
+      page,
+      limit
     );
-  })
+
+    res.status(STATUS.ok).json(
+      new ApiResponse(
+        STATUS.ok,
+        {
+          users,
+          totalUsers,
+          currentPage: page,
+          totalPages: Math.ceil(totalUsers / limit),
+        },
+        "Users who booked provider's services fetched"
+      )
+    );
+  }
 );

@@ -5,7 +5,7 @@
   "type": "commonjs",
   "scripts": {
     "dev": "concurrently \"tsc -w\" \"nodemon dist/index.js\"",
-    "tsc": "tsc -w"
+    "tsc": "tsc -b"
   },
   "keywords": [],
   "author": "",

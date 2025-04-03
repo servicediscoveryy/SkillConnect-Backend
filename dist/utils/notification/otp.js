@@ -12,30 +12,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProfileController = void 0;
-const userModel_1 = __importDefault(require("../../models/userModel"));
-const getProfileController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // @ts-ignore
-        const user = req.user._id;
-        const profile = yield userModel_1.default.findOne({ _id: user }).select("-password");
-        if (profile) {
-            // @ts-ignore
-            res.status(200).json({
-                message: "Profile fetched successfully",
-                data: profile,
-                success: true,
-                error: false
-            });
-        }
-    }
-    catch (error) {
-        // @ts-ignore
-        res.status(500).json({
-            message: error.message,
-            error: true,
-            success: false
-        });
-    }
+exports.verifyOTP = exports.storeOTP = void 0;
+const redisClient_1 = __importDefault(require("../../database/redisClient"));
+// Function to generate a random 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const storeOTP = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    const otp = generateOTP();
+    console.log(otp);
+    yield redisClient_1.default.setEx(`otp:${email}`, 300, otp); // Store OTP with 5 min expiry
+    return otp;
 });
-exports.getProfileController = getProfileController;
+exports.storeOTP = storeOTP;
+const verifyOTP = (email, userOTP) => __awaiter(void 0, void 0, void 0, function* () {
+    const storedOTP = yield redisClient_1.default.get(`otp:${email}`);
+    if (storedOTP && storedOTP === userOTP) {
+        yield redisClient_1.default.del(`otp:${email}`); // Remove OTP after successful verification
+        return true;
+    }
+    return false;
+});
+exports.verifyOTP = verifyOTP;

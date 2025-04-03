@@ -26,6 +26,7 @@ const otp_1 = require("../../utils/notification/otp");
 // Login controller
 exports.sendOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
+    console.log(req.body);
     // Check if user exists
     const user = yield userModel_1.default.findOne({ email });
     if (!user) {
@@ -66,6 +67,7 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
         userId: user._id,
         email: user.email,
         role: user.role,
+        picture: user.profilePicture,
     };
     const jwtToken = jsonwebtoken_1.default.sign(payload, process.env.JWT_SECRET, {
         expiresIn: "1d",

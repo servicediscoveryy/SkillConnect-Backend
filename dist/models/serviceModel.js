@@ -13,12 +13,12 @@ const serviceSchema = new mongoose_1.default.Schema({
     title: {
         type: String,
         required: true,
-        set: (value) => value.toLowerCase(),
+        set: (value) => (value ? value.toLowerCase() : ""),
     },
     description: {
         type: String,
         required: true,
-        set: (value) => value.toLowerCase(),
+        set: (value) => (value ? value.toLowerCase() : ""),
     },
     category: {
         type: mongoose_1.default.Schema.Types.ObjectId,
@@ -37,11 +37,11 @@ const serviceSchema = new mongoose_1.default.Schema({
     location: {
         type: String,
         required: true,
-        set: (value) => value.toLowerCase(),
+        set: (value) => (value ? value.toLowerCase() : ""),
     },
     tags: {
         type: [String],
-        set: (tags) => tags.map((tag) => tag.toLowerCase()),
+        set: (tags) => tags ? tags.map((tag) => tag.toLowerCase()) : [],
     },
 }, { timestamps: true });
 const Service = mongoose_1.default.model("Service", serviceSchema);

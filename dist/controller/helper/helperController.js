@@ -12,27 +12,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.processPayment = void 0;
-const paymentModel_1 = __importDefault(require("../../models/paymentModel"));
-// @ts-ignore
-const processPayment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        // @ts-ignore
-        const { bookingId, paymentId, amount } = req.body;
-        // @ts-ignore
-        const payment = new paymentModel_1.default({
-            paymentId,
-            bookingId,
-            amount,
-            status: 'captured'
-        });
-        const savedPayment = yield payment.save();
-        // @ts-ignore
-        res.status(201).json({ message: "Payment processed", data: savedPayment, success: true, error: false });
+exports.clearDatabase = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
+const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
+const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
+const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
+exports.clearDatabase = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-expect-error
+    const collections = yield mongoose_1.default.connection.db.collections();
+    if (collections.length === 0) {
+        throw new ApiError_1.default(404, "No collections found to delete");
     }
-    catch (error) {
-        // @ts-ignore
-        res.status(500).json({ message: error.message, error: true, success: false });
+    for (const collection of collections) {
+        yield collection.drop();
     }
-});
-exports.processPayment = processPayment;
+    res
+        .status(200)
+        .json(new ApiResponse_1.default(200, "All collections and data have been deleted successfully."));
+}));
