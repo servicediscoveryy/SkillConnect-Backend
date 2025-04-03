@@ -21,9 +21,10 @@ const app = express();
 
 app.use(cookieparser());
 app.use(express.json());
+
 app.use(
   cors({
-    origin: "*",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -66,6 +67,7 @@ app.use(
         status: err.statusCode,
         message: err.message,
         errors: err.errors,
+        success: false,
       });
     }
 

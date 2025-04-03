@@ -14,4 +14,5 @@ userRouter.post("/store-user", authController_1.storeSignUpController);
 userRouter.post("/provider-signup", authController_1.providerSignupController);
 userRouter.get("/logout", authController_1.userLogoutController);
 userRouter.get("/profile", authMiddleware_1.authuser, authController_1.getProfileController);
+userRouter.patch("/profile", authMiddleware_1.authuser, authController_1.updateUserProfile);
 exports.default = userRouter;

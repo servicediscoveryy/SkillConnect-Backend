@@ -43,6 +43,7 @@ exports.sendOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(
 }));
 exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, otp } = req.body;
+    const { signup } = req.query;
     if (!email || !otp) {
         res.status(400).json(new ApiError_1.default(400, "Email and OTP are required"));
         return;
@@ -51,6 +52,10 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     if (!storedOtp) {
         res.status(401).json(new ApiError_1.default(401, "Invalid or expired OTP"));
         return;
+    }
+    if (signup) {
+        const user = new userModel_1.default({ email: email });
+        yield user.save();
     }
     const user = yield userModel_1.default.findOne({ email });
     if (!user) {
@@ -67,9 +72,9 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
-        sameSite: "none",
-        secure: true,
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production", // Only in HTTPS
         httpOnly: true,
     })
         .status(200)
@@ -120,7 +125,7 @@ exports.storeSignUpController = (0, asyncHandler_1.default)((req, res) => __awai
         .cookie("token", jwtToken, {
         maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
         sameSite: "none",
-        secure: true,
+        // secure: true,
         httpOnly: true,
     })
         .status(200)
@@ -187,24 +192,37 @@ const updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, functi
     try {
         const { firstName, lastName, phone, profilePicture } = req.body;
         const userId = req.user._id;
+        // Check if phone number is already in use by another user
+        const existingUser = yield userModel_1.default.findOne({ phone });
+        if (existingUser) {
+            return res.status(400).json({
+                message: "Phone number is already in use",
+                error: true,
+                success: false,
+            });
+        }
+        // Update user profile
         const updatedUser = yield userModel_1.default.findByIdAndUpdate(userId, { firstName, lastName, phone, profilePicture }, { new: true });
         if (!updatedUser) {
-            res
-                .status(404)
-                .json({ message: "User not found", error: true, success: false });
-            return;
+            return res.status(404).json({
+                message: "User not found",
+                error: true,
+                success: false,
+            });
         }
-        res.status(200).json({
-            message: "Profile updated",
+        return res.status(200).json({
+            message: "Profile updated successfully",
             data: updatedUser,
             success: true,
             error: false,
         });
     }
     catch (error) {
-        res
-            .status(500)
-            .json({ message: error.message, error: true, success: false });
+        return res.status(500).json({
+            message: error.message || "Internal Server Error",
+            error: true,
+            success: false,
+        });
     }
 });
 exports.updateUserProfile = updateUserProfile;

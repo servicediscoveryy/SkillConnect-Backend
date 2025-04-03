@@ -1,42 +1,46 @@
+import mongoose from "mongoose";
 import STATUS from "../../data/statusCodes";
 import Cart from "../../models/cartModel";
 import Service from "../../models/serviceModel";
 import { RequestWithUser } from "../../types/RequestWithUser";
 import { ResponseReturnType } from "../../types/ReturnController";
 import asyncHandler from "../../utils/asyncHandler";
+import { integrateRatings } from "../../utils/rating/integrateRatings";
 import ApiError from "../../utils/response/ApiError";
 import ApiResponse from "../../utils/response/ApiResponse";
 
 export const addToCart = asyncHandler(
   async (req: RequestWithUser, res): ResponseReturnType => {
     const { serviceId } = req.body;
-
     const userId = req.user._id;
 
     if (!serviceId) {
       throw new ApiError(STATUS.badRequest, "serviceId is required");
     }
 
+    // Ensure serviceId is an ObjectId
+    const serviceObjectId = new mongoose.Types.ObjectId(serviceId);
+
     // Check if the service exists
-    const service = await Service.findById(serviceId);
+    const service = await Service.findById(serviceObjectId);
     if (!service) {
       throw new ApiError(STATUS.notFound, "Service not found");
     }
 
     // Check if the user already has an active cart
-    let cart = await Cart.findOne({ userId, status: "active" });
+    let cart = await Cart.findOne({ userId });
 
     if (!cart) {
       // Create a new cart if not found
       cart = new Cart({
         userId,
-        items: [{ serviceId }],
+        items: [{ serviceId: serviceObjectId }],
       });
       await cart.save();
       return res
         .status(STATUS.created)
         .json(
-          new ApiResponse(STATUS.created, cart, "Add To Cart Successfully")
+          new ApiResponse(STATUS.created, cart, "Added to cart successfully")
         );
     }
 
@@ -46,11 +50,11 @@ export const addToCart = asyncHandler(
     );
 
     if (itemExists) {
-      throw new ApiError(STATUS.badRequest, "service exists already");
+      throw new ApiError(STATUS.badRequest, "Service already in cart");
     }
 
     // Add new service to cart
-    cart.items.push({ serviceId });
+    cart.items.push({ serviceId: serviceObjectId });
     await cart.save();
 
     res
@@ -58,6 +62,7 @@ export const addToCart = asyncHandler(
       .json(new ApiResponse(STATUS.ok, cart, "Item added to cart"));
   }
 );
+
 export const getAllCart = asyncHandler(async (req: RequestWithUser, res) => {
   const userId = req.user._id;
 
@@ -69,7 +74,7 @@ export const getAllCart = asyncHandler(async (req: RequestWithUser, res) => {
 
   // Calculate cart count (number of items)
   const cartCount = await Cart.aggregate([
-    { $match: { userId, status: "active" } },
+    { $match: { userId } },
     { $unwind: "$items" },
     { $count: "totalItems" },
   ]);
@@ -78,7 +83,7 @@ export const getAllCart = asyncHandler(async (req: RequestWithUser, res) => {
 
   // Calculate total amount
   const totalAmountResult = await Cart.aggregate([
-    { $match: { userId, status: "active" } },
+    { $match: { userId } },
     { $unwind: "$items" },
     {
       $lookup: {
@@ -115,7 +120,7 @@ export const getCartCount = asyncHandler(async (req: RequestWithUser, res) => {
   const userId = req.user._id;
 
   const cartCount = await Cart.aggregate([
-    { $match: { userId, status: "active" } }, // Ensure only active cart is considered
+    { $match: { userId } }, // Ensure only active cart is considered
     { $unwind: "$items" }, // Flatten the items array to count each service separately
     { $count: "totalItems" }, // Count the number of items
   ]);
@@ -137,7 +142,7 @@ export const removeCartItem = asyncHandler(
     }
 
     // Find the active cart
-    const cart = await Cart.findOne({ userId, status: "active" });
+    const cart = await Cart.findOne({ userId });
 
     if (!cart) {
       throw new ApiError(STATUS.notFound, "Cart not found");

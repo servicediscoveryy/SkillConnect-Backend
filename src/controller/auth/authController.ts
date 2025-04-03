@@ -39,6 +39,8 @@ export const sendOtpController = asyncHandler(
 
 export const verifyOtpController = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
+  const { signup } = req.query;
+
   if (!email || !otp) {
     res.status(400).json(new ApiError(400, "Email and OTP are required"));
     return;
@@ -49,6 +51,11 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
   if (!storedOtp) {
     res.status(401).json(new ApiError(401, "Invalid or expired OTP"));
     return;
+  }
+
+  if (signup) {
+    const user = new User({ email: email });
+    await user.save();
   }
 
   const user = await User.findOne({ email });
@@ -70,9 +77,9 @@ export const verifyOtpController = asyncHandler(async (req, res) => {
 
   res
     .cookie("token", jwtToken, {
-      maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
-      sameSite: "none",
-      secure: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production", // Only in HTTPS
       httpOnly: true,
     })
     .status(200)
@@ -149,7 +156,7 @@ export const storeSignUpController = asyncHandler(async (req, res) => {
     .cookie("token", jwtToken, {
       maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
       sameSite: "none",
-      secure: true,
+      // secure: true,
       httpOnly: true,
     })
     .status(200)
@@ -169,7 +176,6 @@ export const providerSignupController = asyncHandler(
     const { firstName, lastName, phone, email } = req.body;
 
     validateRequest(signupSchema, req.body);
-
     // Check if email or phone already exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
 
@@ -262,9 +268,20 @@ export const updateUserProfile = async (
 ) => {
   try {
     const { firstName, lastName, phone, profilePicture } = req.body;
-
     const userId = req.user._id;
 
+    // Check if phone number is already in use by another user
+    const existingUser = await User.findOne({ phone });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Phone number is already in use",
+        error: true,
+        success: false,
+      });
+    }
+
+    // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       { firstName, lastName, phone, profilePicture },
@@ -272,21 +289,24 @@ export const updateUserProfile = async (
     );
 
     if (!updatedUser) {
-      res
-        .status(404)
-        .json({ message: "User not found", error: true, success: false });
-      return;
+      return res.status(404).json({
+        message: "User not found",
+        error: true,
+        success: false,
+      });
     }
 
-    res.status(200).json({
-      message: "Profile updated",
+    return res.status(200).json({
+      message: "Profile updated successfully",
       data: updatedUser,
       success: true,
       error: false,
     });
   } catch (error: any) {
-    res
-      .status(500)
-      .json({ message: error.message, error: true, success: false });
+    return res.status(500).json({
+      message: error.message || "Internal Server Error",
+      error: true,
+      success: false,
+    });
   }
 };

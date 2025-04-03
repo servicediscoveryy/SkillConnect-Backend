@@ -13,6 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.removeCartItem = exports.getCartCount = exports.getAllCart = exports.addToCart = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const cartModel_1 = __importDefault(require("../../models/cartModel"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
@@ -25,31 +26,33 @@ exports.addToCart = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, 
     if (!serviceId) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "serviceId is required");
     }
+    // Ensure serviceId is an ObjectId
+    const serviceObjectId = new mongoose_1.default.Types.ObjectId(serviceId);
     // Check if the service exists
-    const service = yield serviceModel_1.default.findById(serviceId);
+    const service = yield serviceModel_1.default.findById(serviceObjectId);
     if (!service) {
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Service not found");
     }
     // Check if the user already has an active cart
-    let cart = yield cartModel_1.default.findOne({ userId, status: "active" });
+    let cart = yield cartModel_1.default.findOne({ userId });
     if (!cart) {
         // Create a new cart if not found
         cart = new cartModel_1.default({
             userId,
-            items: [{ serviceId }],
+            items: [{ serviceId: serviceObjectId }],
         });
         yield cart.save();
         return res
             .status(statusCodes_1.default.created)
-            .json(new ApiResponse_1.default(statusCodes_1.default.created, cart, "Add To Cart Successfully"));
+            .json(new ApiResponse_1.default(statusCodes_1.default.created, cart, "Added to cart successfully"));
     }
     // Check if item already exists in the cart
     const itemExists = cart.items.some((item) => item.serviceId.toString() === serviceId.toString());
     if (itemExists) {
-        throw new ApiError_1.default(statusCodes_1.default.badRequest, "service exists already");
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Service already in cart");
     }
     // Add new service to cart
-    cart.items.push({ serviceId });
+    cart.items.push({ serviceId: serviceObjectId });
     yield cart.save();
     res
         .status(statusCodes_1.default.ok)
@@ -64,14 +67,14 @@ exports.getAllCart = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
     });
     // Calculate cart count (number of items)
     const cartCount = yield cartModel_1.default.aggregate([
-        { $match: { userId, status: "active" } },
+        { $match: { userId } },
         { $unwind: "$items" },
         { $count: "totalItems" },
     ]);
     const totalItems = cartCount.length > 0 ? cartCount[0].totalItems : 0;
     // Calculate total amount
     const totalAmountResult = yield cartModel_1.default.aggregate([
-        { $match: { userId, status: "active" } },
+        { $match: { userId } },
         { $unwind: "$items" },
         {
             $lookup: {
@@ -97,7 +100,7 @@ exports.getAllCart = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
 exports.getCartCount = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.user._id;
     const cartCount = yield cartModel_1.default.aggregate([
-        { $match: { userId, status: "active" } }, // Ensure only active cart is considered
+        { $match: { userId } }, // Ensure only active cart is considered
         { $unwind: "$items" }, // Flatten the items array to count each service separately
         { $count: "totalItems" }, // Count the number of items
     ]);
@@ -113,7 +116,7 @@ exports.removeCartItem = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "serviceId is required");
     }
     // Find the active cart
-    const cart = yield cartModel_1.default.findOne({ userId, status: "active" });
+    const cart = yield cartModel_1.default.findOne({ userId });
     if (!cart) {
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Cart not found");
     }

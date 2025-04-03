@@ -27,7 +27,9 @@ const userSchema = new Schema<IUser>(
     phone: {
       type: String,
       unique: true,
+      sparse: true, // Allows multiple `null` values
     },
+
     email: {
       type: String,
       required: true,
