@@ -256,7 +256,8 @@ exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaite
           <h1>Booking Confirmed!</h1>
         </div>
         <div class="email-body">
-          <p>Hi ${((_a = booking.userId) === null || _a === void 0 ? void 0 : _a.firstName) || "Customer"} ${((_b = booking.userId) === null || _b === void 0 ? void 0 : _b.lastName) || ""},</p>
+        
+          <p>Hi ${((_a = booking === null || booking === void 0 ? void 0 : booking.userId) === null || _a === void 0 ? void 0 : _a.firstName) || "Customer"} ${(_b = booking.userId) === null || _b === void 0 ? void 0 : _b.lastName},</p>
           <p>Your booking has been successfully accepted! Below are the details:</p>
           <ul>
             <li><strong>Service:</strong> ${((_c = booking.serviceId) === null || _c === void 0 ? void 0 : _c.title) || "N/A"}</li>
@@ -324,25 +325,46 @@ exports.cancelBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         .status(statusCodes_1.default.ok)
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, {}, "Booking cancelled successfully"));
 }));
-// providers booking
+// // providers booking
+// export const getProviderBookings = asyncHandler(
+//   async (req: RequestWithUser, res: Response) => {
+//     if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+//     // Get all services offered by the provider
+//     const providerServices = await Service.find({ providerId: req.user._id });
+//     console.log(providerServices);
+//     // Extract service IDs
+//     const serviceIds = providerServices.map((service) => service._id);
+//     console.log(serviceIds);
+//     // Find bookings for those services
+//     const bookings = await Booking.find({ serviceId: { $in: serviceIds } })
+//       .populate("serviceId", "title category price")
+//       .populate("userId", "name email") // Populate user info
+//       .populate("addressId") // Populate address details
+//       .sort({ createdAt: -1 });
+//     res
+//       .status(STATUS.ok)
+//       .json(new ApiResponse(STATUS.ok, bookings, "Provider bookings fetched"));
+//   }
+// );
 exports.getProviderBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!req.user)
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
     // Get all services offered by the provider
     const providerServices = yield serviceModel_1.default.find({ providerId: req.user._id });
-    console.log(providerServices);
     // Extract service IDs
     const serviceIds = providerServices.map((service) => service._id);
-    console.log(serviceIds);
-    // Find bookings for those services
-    const bookings = yield bookingModel_1.default.find({ serviceId: { $in: serviceIds } })
+    // Find bookings for those services where orderStatus is NOT "completed"
+    const bookings = yield bookingModel_1.default.find({
+        serviceId: { $in: serviceIds },
+        orderStatus: { $ne: "completed" }, // Fetch only non-completed orders
+    })
         .populate("serviceId", "title category price")
-        .populate("userId", "name email") // Populate user info
+        .populate("userId", "firstName lastName email") // Populate user info
         .populate("addressId") // Populate address details
         .sort({ createdAt: -1 });
     res
         .status(statusCodes_1.default.ok)
-        .json(new ApiResponse_1.default(statusCodes_1.default.ok, bookings, "Provider bookings fetched"));
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, bookings, "Non-completed provider bookings fetched"));
 }));
 exports.GenerateOtpBookingComplete = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { bookingId } = req.body;

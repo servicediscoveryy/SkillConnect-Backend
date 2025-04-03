@@ -290,25 +290,26 @@ export const updateBookingStatus = asyncHandler(
           <h1>Booking Confirmed!</h1>
         </div>
         <div class="email-body">
-          <p>Hi ${booking.userId?.firstName || "Customer"} ${
-          booking.userId?.lastName || ""
+        
+          <p>Hi ${(booking?.userId as any)?.firstName || "Customer"} ${
+          (booking.userId as any)?.lastName
         },</p>
           <p>Your booking has been successfully accepted! Below are the details:</p>
           <ul>
             <li><strong>Service:</strong> ${
-              booking.serviceId?.title || "N/A"
+              (booking.serviceId as any)?.title || "N/A"
             }</li>
             <li><strong>Provider:</strong> ${
-              booking.serviceId?.providerId?.email || "N/A"
+              (booking.serviceId as any)?.providerId?.email || "N/A"
             }</li>
             <li><strong>Provider Phone:</strong> ${
-              booking.serviceId?.providerId?.phone || "+91 1212121212"
+              (booking.serviceId as any)?.providerId?.phone || "+91 1212121212"
             }</li>
             <li><strong>Amount:</strong> ₹${
-              booking.serviceId?.price || "N/A"
+              (booking.serviceId as any)?.price || "N/A"
             }</li>
             <li><strong>Location:</strong> ${
-              booking.serviceId?.location || "N/A"
+              (booking.serviceId as any)?.location || "N/A"
             }</li>
             <li><strong>Order Status:</strong> ${
               booking.orderStatus || "N/A"
@@ -392,27 +393,52 @@ export const cancelBooking = asyncHandler(
   }
 );
 
-// providers booking
+// // providers booking
+// export const getProviderBookings = asyncHandler(
+//   async (req: RequestWithUser, res: Response) => {
+//     if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+
+//     // Get all services offered by the provider
+//     const providerServices = await Service.find({ providerId: req.user._id });
+//     console.log(providerServices);
+//     // Extract service IDs
+//     const serviceIds = providerServices.map((service) => service._id);
+//     console.log(serviceIds);
+//     // Find bookings for those services
+//     const bookings = await Booking.find({ serviceId: { $in: serviceIds } })
+//       .populate("serviceId", "title category price")
+//       .populate("userId", "name email") // Populate user info
+//       .populate("addressId") // Populate address details
+//       .sort({ createdAt: -1 });
+
+//     res
+//       .status(STATUS.ok)
+//       .json(new ApiResponse(STATUS.ok, bookings, "Provider bookings fetched"));
+//   }
+// );
 export const getProviderBookings = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
     if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
 
     // Get all services offered by the provider
     const providerServices = await Service.find({ providerId: req.user._id });
-    console.log(providerServices);
+
     // Extract service IDs
     const serviceIds = providerServices.map((service) => service._id);
-    console.log(serviceIds);
-    // Find bookings for those services
-    const bookings = await Booking.find({ serviceId: { $in: serviceIds } })
+
+    // Find bookings for those services where orderStatus is NOT "completed"
+    const bookings = await Booking.find({
+      serviceId: { $in: serviceIds },
+      orderStatus: { $ne: "completed" }, // Fetch only non-completed orders
+    })
       .populate("serviceId", "title category price")
-      .populate("userId", "name email") // Populate user info
+      .populate("userId", "firstName lastName email") // Populate user info
       .populate("addressId") // Populate address details
       .sort({ createdAt: -1 });
 
     res
       .status(STATUS.ok)
-      .json(new ApiResponse(STATUS.ok, bookings, "Provider bookings fetched"));
+      .json(new ApiResponse(STATUS.ok, bookings, "Non-completed provider bookings fetched"));
   }
 );
 
@@ -467,3 +493,5 @@ export const CompleteBooking = asyncHandler(
       .json(new ApiResponse(STATUS.ok, booking, "Booking status updated"));
   }
 );
+
+

@@ -4,6 +4,7 @@ import {
   deleteService,
   getProviderServiceById,
   getProviderServices,
+  getUsersForProviderBookings,
   rateService,
   updateService,
 } from "../../controller/serviceProvider/serviceProviderController";
@@ -12,6 +13,7 @@ import { isServiceProvider } from "../../middleware/providerCheckMiddleware";
 
 const serviceProviderRouter = express.Router();
 
+serviceProviderRouter.get("/users",authuser,getUsersForProviderBookings)
 // Fetch all services
 serviceProviderRouter.get(
   "/",
@@ -43,6 +45,7 @@ serviceProviderRouter.delete(
   isServiceProvider,
   deleteService
 );
+
 
 // Rate a service
 serviceProviderRouter.post("/rating/:serviceId", authuser, rateService);

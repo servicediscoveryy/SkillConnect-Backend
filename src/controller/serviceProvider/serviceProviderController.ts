@@ -12,6 +12,7 @@ import {
   validateRequest,
 } from "../../validation";
 import mongoose from "mongoose";
+import { getUsersWhoBookedProviderServices } from "../../services/userServices";
 
 // Create a new service
 export const createService = asyncHandler(
@@ -162,12 +163,12 @@ export const getProviderServiceById = asyncHandler(
         .json(
           new ApiResponse(STATUS.ok, service, "Service fetched successfully")
         );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching service:", error);
       res
-        .status(STATUS.serverError)
+        .status(STATUS.badRequest)
         .json(
-          new ApiResponse(STATUS.serverError, null, "Internal server error")
+          new ApiResponse(STATUS.badRequest, null, "Internal server error")
         );
     }
   }
@@ -213,5 +214,33 @@ export const rateService = asyncHandler(
     res
       .status(201)
       .json(new ApiResponse(201, newRating, "Service rated successfully"));
+  }
+);
+
+export const getUsersForProviderBookings = asyncHandler(
+  async (req: RequestWithUser, res: Response) => {
+    if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    console.log("INSIDE THE BOOKINGS USERS");
+    const { users, totalUsers } = await getUsersWhoBookedProviderServices(
+      req.user._id,
+      page,
+      limit
+    );
+
+    res.status(STATUS.ok).json(
+      new ApiResponse(
+        STATUS.ok,
+        {
+          users,
+          totalUsers,
+          currentPage: page,
+          totalPages: Math.ceil(totalUsers / limit),
+        },
+        "Users who booked provider's services fetched"
+      )
+    );
   }
 );
