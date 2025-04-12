@@ -18,6 +18,8 @@ const addressRouter_1 = __importDefault(require("./routes/address/addressRouter"
 const cartRouter_1 = __importDefault(require("./routes/cart/cartRouter"));
 const categoryRouter_1 = __importDefault(require("./routes/category/categoryRouter"));
 const admin_1 = require("./routes/admin");
+const recommendationRouter_1 = __importDefault(require("./routes/recommendation/recommendationRouter"));
+const paymentRouter_1 = __importDefault(require("./routes/payment/paymentRouter"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cookie_parser_1.default)());
@@ -38,10 +40,14 @@ app.use("/api/v1/booking", bookingRouter_1.default);
 app.use("/api/v1/address", addressRouter_1.default);
 //cart routes
 app.use("/api/v1/cart", cartRouter_1.default);
-// category Route
+// category Routes
 app.use("/api/v1/category", categoryRouter_1.default);
 // admin routes
 app.use("/api/v1/admin", admin_1.adminRouter);
+// recommendation
+app.use("/api/v1/recommend", recommendationRouter_1.default);
+//payment
+app.use("/api/v1/payment", paymentRouter_1.default);
 app.get("/", (req, res) => {
     res.send("SERVER IS WORKING");
 });
@@ -65,7 +71,7 @@ app.use(
     });
 });
 // dbconfig
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 (0, db_1.dbconnect)()
     .then(() => {
     console.log("db connected");

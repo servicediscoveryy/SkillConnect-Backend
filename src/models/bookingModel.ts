@@ -21,6 +21,7 @@ const bookingSchema = new mongoose.Schema(
       ref: "Service",
       required: true,
     },
+
     paymentMethod: {
       type: String,
       enum: ["online", "cod"],

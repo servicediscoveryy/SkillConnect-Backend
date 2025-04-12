@@ -66,7 +66,7 @@ export const getUsersWhoBookedProviderServices = async (
         category: (booking.serviceId as any).category,
         price: (booking.serviceId as any).price,
         date:(booking.serviceId as any).createdAt,
-        status:(booking.orderStatus
+        status:(booking.orderStatus)
       },
     }));
   
