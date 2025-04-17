@@ -426,6 +426,8 @@ export const getProviderBookings = asyncHandler(
     // Extract service IDs
     const serviceIds = providerServices.map((service) => service._id);
 
+    console.log(serviceIds);
+
     // Find bookings for those services where orderStatus is NOT "completed"
     const bookings = await Booking.find({
       serviceId: { $in: serviceIds },
@@ -438,7 +440,13 @@ export const getProviderBookings = asyncHandler(
 
     res
       .status(STATUS.ok)
-      .json(new ApiResponse(STATUS.ok, bookings, "Non-completed provider bookings fetched"));
+      .json(
+        new ApiResponse(
+          STATUS.ok,
+          bookings,
+          "Non-completed provider bookings fetched"
+        )
+      );
   }
 );
 
@@ -494,4 +502,53 @@ export const CompleteBooking = asyncHandler(
   }
 );
 
+export const getProviderOrderStats = asyncHandler(
+  async (req: Request, res: Response) => {
+    // @ts-ignore
+    const providerId = req.user?._id; // Make sure `req.user` is populated via auth middleware
 
+    if (!mongoose.Types.ObjectId.isValid(providerId)) {
+      throw new ApiError(STATUS.badRequest, "Invalid provider ID");
+    }
+
+    // Step 1: Get all bookings where the service's providerId = current user's _id
+    const bookings = await Booking.find().populate({
+      path: "serviceId",
+      select: "title providerId",
+      match: { providerId: providerId }, // filter at population level
+    });
+
+    // Step 2: Filter out nulls where serviceId was not matched
+    const filteredBookings = bookings.filter((b) => b.serviceId !== null);
+
+    const totalOrders = filteredBookings.length;
+    const completedOrders = filteredBookings.filter(
+      (b) => b.orderStatus === "completed"
+    );
+    const pendingOrders = filteredBookings.filter(
+      (b) => b.orderStatus === "pending"
+    );
+
+    const paidAmount = completedOrders
+      .filter((b) => b.paymentStatus === "captured")
+      .reduce((sum, b) => sum + (b.amount || 0), 0);
+
+    const pendingAmount = filteredBookings
+      .filter((b) => b.paymentStatus === "pending")
+      .reduce((sum, b) => sum + (b.amount || 0), 0);
+
+    const stats = {
+      totalOrders,
+      completedOrders: completedOrders.length,
+      pendingOrders: pendingOrders.length,
+      paidAmount,
+      pendingAmount,
+    };
+
+    res
+      .status(STATUS.ok)
+      .json(
+        new ApiResponse(STATUS.ok, stats, "Order stats fetched for provider")
+      );
+  }
+);

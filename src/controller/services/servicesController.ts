@@ -7,6 +7,7 @@ import ApiError from "../../utils/response/ApiError";
 import ApiResponse from "../../utils/response/ApiResponse";
 import { integrateRatings } from "../../utils/rating/integrateRatings";
 import Category from "../../models/categoryModel";
+
 export const getServices = asyncHandler(async (req, res) => {
   const { category, query } = req.query;
   const page = parseInt(req.query.page as string) || 1;
@@ -59,7 +60,6 @@ export const getServices = asyncHandler(async (req, res) => {
     ];
   }
 
-  console.log(filter);
 
   // 🏆 Check if matching services exist before querying
   const existingServices = await Service.find(filter);

@@ -63,7 +63,6 @@ exports.getServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
             { tags: { $regex: query, $options: "i" } },
         ];
     }
-    console.log(filter);
     // 🏆 Check if matching services exist before querying
     const existingServices = yield serviceModel_1.default.find(filter);
     // 📦 Fetch paginated services

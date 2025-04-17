@@ -6,6 +6,7 @@ import {
   GenerateOtpBookingComplete,
   getBookingById,
   getProviderBookings,
+  getProviderOrderStats,
   getUserBookings,
   updateBookingStatus,
 } from "../../controller/booking/bookingController";
@@ -23,6 +24,7 @@ bookingRouter.get(
 );
 bookingRouter.get("/:bookingId", authuser, getBookingById);
 bookingRouter.get("/", authuser, getUserBookings);
+bookingRouter.get("/dashboard/stats", authuser,isServiceProvider, getProviderOrderStats);
 
 bookingRouter.post("/booking-otp", GenerateOtpBookingComplete);
 bookingRouter.post("/booking-otp/verify", CompleteBooking);

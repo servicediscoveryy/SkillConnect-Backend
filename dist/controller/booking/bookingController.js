@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CompleteBooking = exports.GenerateOtpBookingComplete = exports.getProviderBookings = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
+exports.getProviderOrderStats = exports.CompleteBooking = exports.GenerateOtpBookingComplete = exports.getProviderBookings = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -353,6 +353,7 @@ exports.getProviderBookings = (0, asyncHandler_1.default)((req, res) => __awaite
     const providerServices = yield serviceModel_1.default.find({ providerId: req.user._id });
     // Extract service IDs
     const serviceIds = providerServices.map((service) => service._id);
+    console.log(serviceIds);
     // Find bookings for those services where orderStatus is NOT "completed"
     const bookings = yield bookingModel_1.default.find({
         serviceId: { $in: serviceIds },
@@ -404,4 +405,39 @@ exports.CompleteBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
     res
         .status(statusCodes_1.default.ok)
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, booking, "Booking status updated"));
+}));
+exports.getProviderOrderStats = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    // @ts-ignore
+    const providerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id; // Make sure `req.user` is populated via auth middleware
+    if (!mongoose_1.default.Types.ObjectId.isValid(providerId)) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid provider ID");
+    }
+    // Step 1: Get all bookings where the service's providerId = current user's _id
+    const bookings = yield bookingModel_1.default.find().populate({
+        path: "serviceId",
+        select: "title providerId",
+        match: { providerId: providerId }, // filter at population level
+    });
+    // Step 2: Filter out nulls where serviceId was not matched
+    const filteredBookings = bookings.filter((b) => b.serviceId !== null);
+    const totalOrders = filteredBookings.length;
+    const completedOrders = filteredBookings.filter((b) => b.orderStatus === "completed");
+    const pendingOrders = filteredBookings.filter((b) => b.orderStatus === "pending");
+    const paidAmount = completedOrders
+        .filter((b) => b.paymentStatus === "captured")
+        .reduce((sum, b) => sum + (b.amount || 0), 0);
+    const pendingAmount = filteredBookings
+        .filter((b) => b.paymentStatus === "pending")
+        .reduce((sum, b) => sum + (b.amount || 0), 0);
+    const stats = {
+        totalOrders,
+        completedOrders: completedOrders.length,
+        pendingOrders: pendingOrders.length,
+        paidAmount,
+        pendingAmount,
+    };
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, stats, "Order stats fetched for provider"));
 }));
