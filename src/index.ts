@@ -14,6 +14,8 @@ import addressRouter from "./routes/address/addressRouter";
 import cartRouter from "./routes/cart/cartRouter";
 import categoryRouter from "./routes/category/categoryRouter";
 import { adminRouter } from "./routes/admin";
+import recommendationRouter from "./routes/recommendation/recommendationRouter";
+import paymentRouter from "./routes/payment/paymentRouter";
 
 dotenv.config();
 
@@ -21,9 +23,10 @@ const app = express();
 
 app.use(cookieparser());
 app.use(express.json());
+
 app.use(
   cors({
-    origin: "*",
+    origin: ["http://localhost:5173", "http://localhost:5174"],
     credentials: true,
   })
 );
@@ -46,11 +49,17 @@ app.use("/api/v1/address", addressRouter);
 //cart routes
 app.use("/api/v1/cart", cartRouter);
 
-// category Route
+// category Routes
 app.use("/api/v1/category", categoryRouter);
 
 // admin routes
 app.use("/api/v1/admin", adminRouter);
+
+// recommendation
+app.use("/api/v1/recommend", recommendationRouter);
+
+//payment
+app.use("/api/v1/payment", paymentRouter);
 
 app.get("/", (req, res) => {
   res.send("SERVER IS WORKING");
@@ -66,6 +75,7 @@ app.use(
         status: err.statusCode,
         message: err.message,
         errors: err.errors,
+        success: false,
       });
     }
 
@@ -78,7 +88,7 @@ app.use(
 );
 
 // dbconfig
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 dbconnect()
   .then(() => {
     console.log("db connected");

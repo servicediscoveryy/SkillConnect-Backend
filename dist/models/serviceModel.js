@@ -33,7 +33,7 @@ const serviceSchema = new mongoose_1.default.Schema({
         default: "active",
         required: true,
     },
-    view: { type: Number, default: 0, min: 0 },
+    views: { type: Number, default: 0, min: 0 },
     location: {
         type: String,
         required: true,

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getCategroyWiseServices,
+  getSearchSuggestions,
   getServiceById,
   getServices,
   getTopServices,
@@ -14,6 +15,8 @@ servicesRouter.get("/", getServices);
 servicesRouter.get("/top", getTopServices);
 
 servicesRouter.get("/categroy-wise-services", getCategroyWiseServices);
+
+servicesRouter.get("/search-suggestion", getSearchSuggestions);
 
 servicesRouter.get("/recommended", getRecommendedByUser); 
 servicesRouter.get("/:serviceId", getServiceById);

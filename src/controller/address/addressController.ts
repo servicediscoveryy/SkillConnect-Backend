@@ -1,9 +1,11 @@
+import { isValidObjectId } from "mongoose";
 import STATUS from "../../data/statusCodes";
 import Address from "../../models/addressModel";
 import { RequestWithUser } from "../../types/RequestWithUser";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiResponse from "../../utils/response/ApiResponse";
 import { addressValidationSchema, validateRequest } from "../../validation";
+import ApiError from "../../utils/response/ApiError";
 
 export const createAddress = asyncHandler(async (req: RequestWithUser, res) => {
   const _id = req.user._id;
@@ -92,6 +94,9 @@ export const deleteAddress = asyncHandler(async (req: RequestWithUser, res) => {
   const { addressId } = req.params;
   const userId = req.user._id;
 
+  if (!isValidObjectId(addressId)) {
+    throw new ApiError(400, "Address Not found");
+  }
   const address = await Address.findOneAndDelete({ _id: addressId, userId });
 
   if (!address) {

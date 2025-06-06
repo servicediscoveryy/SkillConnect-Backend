@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.rateService = exports.getProviderServiceById = exports.getProviderServices = exports.deleteService = exports.updateService = exports.createService = void 0;
+exports.getUsersForProviderBookings = exports.rateService = exports.getProviderServiceById = exports.getProviderServices = exports.deleteService = exports.updateService = exports.createService = void 0;
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
@@ -21,6 +21,7 @@ const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const validation_1 = require("../../validation");
 const mongoose_1 = __importDefault(require("mongoose"));
+const userServices_1 = require("../../services/userServices");
 // Create a new service
 exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { title, description, category, image, price, tags, location } = req.body;
@@ -32,10 +33,10 @@ exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Choose Right Category");
     }
     const newService = new serviceModel_1.default({
-        providerId: "67db1307330a765af9d93e4a",
+        providerId: req.user._id,
         title,
         description,
-        category: "67db12bd330a765af9d93e42",
+        category: category,
         image,
         price,
         status: "active",
@@ -68,8 +69,8 @@ exports.deleteService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 }));
 // Get all services by serach category
 exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // const { id } = req?.user;
-    const id = "67db1307330a765af9d93e4a";
+    const id = req === null || req === void 0 ? void 0 : req.user._id;
+    console.log("services", id);
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -93,6 +94,7 @@ exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.def
         .populate("category", "category")
         .skip((page - 1) * limit)
         .limit(limit);
+    console.log(services);
     // Send the response with pagination info
     res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, services, "Services fetched successfully", {
         totalPages: Math.ceil(totalServices / limit),
@@ -118,8 +120,8 @@ exports.getProviderServiceById = (0, asyncHandler_1.default)((req, res) => __awa
     catch (error) {
         console.error("Error fetching service:", error);
         res
-            .status(statusCodes_1.default.serverError)
-            .json(new ApiResponse_1.default(statusCodes_1.default.serverError, null, "Internal server error"));
+            .status(statusCodes_1.default.badRequest)
+            .json(new ApiResponse_1.default(statusCodes_1.default.badRequest, null, "Internal server error"));
     }
 }));
 // Rate a service
@@ -155,4 +157,18 @@ exports.rateService = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
     res
         .status(201)
         .json(new ApiResponse_1.default(201, newRating, "Service rated successfully"));
+}));
+exports.getUsersForProviderBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.user)
+        throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    console.log("INSIDE THE BOOKINGS USERS");
+    const { users, totalUsers } = yield (0, userServices_1.getUsersWhoBookedProviderServices)(req.user._id, page, limit);
+    res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, {
+        users,
+        totalUsers,
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limit),
+    }, "Users who booked provider's services fetched"));
 }));

@@ -8,61 +8,87 @@ import ApiResponse from "../../utils/response/ApiResponse";
 import { integrateRatings } from "../../utils/rating/integrateRatings";
 import Category from "../../models/categoryModel";
 
-export const getServices = asyncHandler(
-  asyncHandler(async (req, res) => {
-    const { category, query } = req.query; // Using query params for both category and search query
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+export const getServices = asyncHandler(async (req, res) => {
+  const { category, query } = req.query;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-    const filter: any = { status: "active" }; // Default filter by status
+  const filter: any = { status: "active" };
+  let categoryIds: string[] = [];
 
-    // Add category filter if category is provided in the query
-    if (category) {
-      const categoryDoc = await Category.findOne({
-        category: { $regex: category, $options: "i" }, // ✅ Partial match (case-insensitive)
-      });
+  console.log(category);
 
-      if (!categoryDoc) {
-        throw new ApiError(404, "Category not found");
-      }
-      filter.category = categoryDoc._id;
+  // 🔍 Search for matching categories if query is provided
+  if (query) {
+    const matchedCategories = await Category.find({
+      category: { $regex: query, $options: "i" }, // Case-insensitive search
+    });
+
+    if (matchedCategories.length > 0) {
+      categoryIds = matchedCategories.map((cat) => cat._id.toString());
     }
+  }
 
-    // Add search filter if query is provided in the query
-    if (query) {
-      filter.$or = [
-        { title: { $regex: query, $options: "i" } },
-        { description: { $regex: query, $options: "i" } },
-        { location: { $regex: query, $options: "i" } },
-        { tags: { $regex: query, $options: "i" } },
-      ];
+  // 🔍 If category filter is provided in the request, find its ID
+  if (category) {
+    const categoryDoc = await Category.findOne({
+      category: { $regex: category },
+    });
+
+    if (!categoryDoc) {
+      throw new ApiError(404, "Category not found");
     }
+    categoryIds.push(categoryDoc._id.toString());
+  }
 
-    const totalServices = await Service.countDocuments(filter); // Get total count based on filters
-
-    // Fetch paginated services based on the filter
-    const services = await Service.find(filter)
-      .populate("category", "category")
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    const servicesWithRatings = await integrateRatings(services);
-    // Send the response with pagination info
-    res.status(STATUS.ok).json(
-      new ApiResponse(
-        STATUS.ok,
-        servicesWithRatings,
-        "Services fetched successfully",
-        {
-          totalPages: Math.ceil(totalServices / limit),
-          currentPage: page,
-          pageSize: limit,
-          totalItems: totalServices,
-        }
-      )
+  // ✅ Convert categoryIds to ObjectId for proper matching
+  if (categoryIds.length > 0) {
+    const categoryIdsAsObjectIds = categoryIds.map(
+      (id) => new mongoose.Types.ObjectId(id)
     );
-  })
-);
+    filter.category = { $in: categoryIdsAsObjectIds };
+  }
+
+  // 🔍 Ensure `$or` does not override category filtering
+  if (query) {
+    filter.$or = [
+      { category: { $in: [categoryIds] } },
+      { title: { $regex: query, $options: "i" } },
+      { description: { $regex: query, $options: "i" } },
+      { location: { $regex: query, $options: "i" } },
+      { tags: { $regex: query, $options: "i" } },
+    ];
+  }
+
+
+  // 🏆 Check if matching services exist before querying
+  const existingServices = await Service.find(filter);
+
+  // 📦 Fetch paginated services
+  const totalServices = await Service.countDocuments(filter);
+  const services = await Service.find(filter)
+    .populate("category", "category")
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+  // 🏆 Integrate Ratings (Assuming integrateRatings function exists)
+  const servicesWithRatings = await integrateRatings(services);
+
+  // 📝 Format response
+  res.status(STATUS.ok).json(
+    new ApiResponse(
+      STATUS.ok,
+      servicesWithRatings,
+      "Services fetched successfully",
+      {
+        totalPages: Math.ceil(totalServices / limit),
+        currentPage: page,
+        pageSize: limit,
+        totalItems: totalServices,
+      }
+    )
+  );
+});
 
 export const getTopServices = asyncHandler(async (req, res) => {
   try {
@@ -92,7 +118,7 @@ export const getTopServices = asyncHandler(async (req, res) => {
     const services = await Service.find({
       _id: { $in: serviceIds },
       ...filter, // ✅ Apply dynamic filters
-    });
+    }).populate("category");
 
     const servicesWithRatings = await integrateRatings(services);
 
@@ -182,4 +208,34 @@ export const getCategroyWiseServices = asyncHandler(async (req, res) => {
       .status(STATUS.notFound)
       .json(new ApiResponse(STATUS.badGateway, null, "Error"));
   }
+});
+
+export const getSearchSuggestions = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+
+  // Find services where the title matches
+  const services = await Service.find({
+    $or: [
+      { title: { $regex: query, $options: "i" } }, // Case-insensitive search in title
+      { description: { $regex: query, $options: "i" } },
+      { location: { $regex: query, $options: "i" } },
+    ],
+  })
+    .select("title")
+    .limit(10);
+
+  const category = await Category.find({
+    category: { $regex: query, $options: "i" },
+  })
+    .select("category")
+    .limit(10);
+
+  const titleCategory = category.map((cat) => ({
+    _id: cat._id,
+    title: cat.category,
+  }));
+
+  res
+    .status(STATUS.ok)
+    .json(new ApiResponse(STATUS.ok, [...services, ...titleCategory]));
 });

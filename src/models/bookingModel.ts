@@ -14,7 +14,6 @@ const bookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address",
       required: true,
-      
     },
 
     serviceId: {
@@ -22,13 +21,14 @@ const bookingSchema = new mongoose.Schema(
       ref: "Service",
       required: true,
     },
+
     paymentMethod: {
       type: String,
       enum: ["online", "cod"],
     }, // Payment method
     orderStatus: {
       type: String,
-      enum: ["pending", "completed", "cancelled"],
+      enum: ["pending", "accepted", "completed", "cancelled"],
       default: "pending", // Reflects the status of the order
     },
     paymentStatus: {

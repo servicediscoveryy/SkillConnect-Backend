@@ -36,6 +36,7 @@ const userSchema = new mongoose_1.Schema({
     phone: {
         type: String,
         unique: true,
+        sparse: true, // Allows multiple `null` values
     },
     email: {
         type: String,

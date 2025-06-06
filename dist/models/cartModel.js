@@ -9,20 +9,19 @@ const CartSchema = new mongoose_1.default.Schema({
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "User",
         required: true,
+        unique: true, // 🔹 Ensures one cart per user
     },
-    items: [
-        {
-            serviceId: {
-                type: mongoose_1.default.Schema.Types.ObjectId,
-                ref: "Service",
-                required: true,
+    items: {
+        type: [
+            {
+                serviceId: {
+                    type: mongoose_1.default.Schema.Types.ObjectId,
+                    ref: "Service",
+                    required: true,
+                },
             },
-        },
-    ],
-    status: {
-        type: String,
-        enum: ["active", "ordered", "cancelled"],
-        default: "active",
+        ],
+        default: [],
     },
 }, { timestamps: true });
 const Cart = mongoose_1.default.model("Cart", CartSchema);

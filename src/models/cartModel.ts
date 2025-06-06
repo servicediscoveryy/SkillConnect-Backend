@@ -6,25 +6,23 @@ const CartSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      unique: true, // 🔹 Ensures one cart per user
     },
-    items: [
-      {
-        serviceId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Service",
-          required: true,
+    items: {
+      type: [
+        {
+          serviceId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Service",
+            required: true,
+          },
         },
-      },
-    ],
-    status: {
-      type: String,
-      enum: ["active", "ordered", "cancelled"],
-      default: "active",
+      ],
+      default: [],
     },
   },
   { timestamps: true }
 );
 
 const Cart = mongoose.model("Cart", CartSchema);
-
 export default Cart;

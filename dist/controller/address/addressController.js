@@ -13,11 +13,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteAddress = exports.updateAddress = exports.getAddressById = exports.getAllAddresses = exports.createAddress = void 0;
+const mongoose_1 = require("mongoose");
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const addressModel_1 = __importDefault(require("../../models/addressModel"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const validation_1 = require("../../validation");
+const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 exports.createAddress = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const _id = req.user._id;
     const { street, area, city, state, country, pincode, landmark } = req.body;
@@ -75,6 +77,9 @@ exports.updateAddress = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 exports.deleteAddress = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { addressId } = req.params;
     const userId = req.user._id;
+    if (!(0, mongoose_1.isValidObjectId)(addressId)) {
+        throw new ApiError_1.default(400, "Address Not found");
+    }
     const address = yield addressModel_1.default.findOneAndDelete({ _id: addressId, userId });
     if (!address) {
         res

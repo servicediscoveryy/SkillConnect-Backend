@@ -4,6 +4,7 @@ import {
   providerSignupController,
   sendOtpController,
   storeSignUpController,
+  updateUserProfile,
   userLogoutController,
   userSignupController,
   verifyOtpController,
@@ -25,5 +26,7 @@ userRouter.post("/provider-signup", providerSignupController);
 userRouter.get("/logout", userLogoutController);
 
 userRouter.get("/profile", authuser, getProfileController);
+
+userRouter.patch("/profile", authuser, updateUserProfile);
 
 export default userRouter;

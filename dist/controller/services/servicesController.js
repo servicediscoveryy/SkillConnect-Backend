@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCategroyWiseServices = exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
+exports.getSearchSuggestions = exports.getCategroyWiseServices = exports.getServiceById = exports.getTopServices = exports.getServices = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const ratingModel_1 = __importDefault(require("../../models/ratingModel"));
@@ -22,45 +22,65 @@ const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const integrateRatings_1 = require("../../utils/rating/integrateRatings");
 const categoryModel_1 = __importDefault(require("../../models/categoryModel"));
-exports.getServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { category, query } = req.query; // Using query params for both category and search query
+exports.getServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { category, query } = req.query;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const filter = { status: "active" }; // Default filter by status
-    // Add category filter if category is provided in the query
+    const filter = { status: "active" };
+    let categoryIds = [];
+    console.log(category);
+    // 🔍 Search for matching categories if query is provided
+    if (query) {
+        const matchedCategories = yield categoryModel_1.default.find({
+            category: { $regex: query, $options: "i" }, // Case-insensitive search
+        });
+        if (matchedCategories.length > 0) {
+            categoryIds = matchedCategories.map((cat) => cat._id.toString());
+        }
+    }
+    // 🔍 If category filter is provided in the request, find its ID
     if (category) {
         const categoryDoc = yield categoryModel_1.default.findOne({
-            category: { $regex: category, $options: "i" }, // ✅ Partial match (case-insensitive)
+            category: { $regex: category },
         });
         if (!categoryDoc) {
             throw new ApiError_1.default(404, "Category not found");
         }
-        filter.category = categoryDoc._id;
+        categoryIds.push(categoryDoc._id.toString());
     }
-    // Add search filter if query is provided in the query
+    // ✅ Convert categoryIds to ObjectId for proper matching
+    if (categoryIds.length > 0) {
+        const categoryIdsAsObjectIds = categoryIds.map((id) => new mongoose_1.default.Types.ObjectId(id));
+        filter.category = { $in: categoryIdsAsObjectIds };
+    }
+    // 🔍 Ensure `$or` does not override category filtering
     if (query) {
         filter.$or = [
+            { category: { $in: [categoryIds] } },
             { title: { $regex: query, $options: "i" } },
             { description: { $regex: query, $options: "i" } },
             { location: { $regex: query, $options: "i" } },
             { tags: { $regex: query, $options: "i" } },
         ];
     }
-    const totalServices = yield serviceModel_1.default.countDocuments(filter); // Get total count based on filters
-    // Fetch paginated services based on the filter
+    // 🏆 Check if matching services exist before querying
+    const existingServices = yield serviceModel_1.default.find(filter);
+    // 📦 Fetch paginated services
+    const totalServices = yield serviceModel_1.default.countDocuments(filter);
     const services = yield serviceModel_1.default.find(filter)
         .populate("category", "category")
         .skip((page - 1) * limit)
         .limit(limit);
+    // 🏆 Integrate Ratings (Assuming integrateRatings function exists)
     const servicesWithRatings = yield (0, integrateRatings_1.integrateRatings)(services);
-    // Send the response with pagination info
+    // 📝 Format response
     res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, servicesWithRatings, "Services fetched successfully", {
         totalPages: Math.ceil(totalServices / limit),
         currentPage: page,
         pageSize: limit,
         totalItems: totalServices,
     }));
-})));
+}));
 exports.getTopServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { limit = 10, location, category, status } = req.query;
@@ -84,7 +104,7 @@ exports.getTopServices = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
         ]);
         const serviceIds = topServices.map((service) => service._id);
         // Fetch services that match filters and are in the top-rated list
-        const services = yield serviceModel_1.default.find(Object.assign({ _id: { $in: serviceIds } }, filter));
+        const services = yield serviceModel_1.default.find(Object.assign({ _id: { $in: serviceIds } }, filter)).populate("category");
         const servicesWithRatings = yield (0, integrateRatings_1.integrateRatings)(services);
         res
             .status(statusCodes_1.default.ok)
@@ -151,4 +171,29 @@ exports.getCategroyWiseServices = (0, asyncHandler_1.default)((req, res) => __aw
             .status(statusCodes_1.default.notFound)
             .json(new ApiResponse_1.default(statusCodes_1.default.badGateway, null, "Error"));
     }
+}));
+exports.getSearchSuggestions = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { query } = req.query;
+    // Find services where the title matches
+    const services = yield serviceModel_1.default.find({
+        $or: [
+            { title: { $regex: query, $options: "i" } }, // Case-insensitive search in title
+            { description: { $regex: query, $options: "i" } },
+            { location: { $regex: query, $options: "i" } },
+        ],
+    })
+        .select("title")
+        .limit(10);
+    const category = yield categoryModel_1.default.find({
+        category: { $regex: query, $options: "i" },
+    })
+        .select("category")
+        .limit(10);
+    const titleCategory = category.map((cat) => ({
+        _id: cat._id,
+        title: cat.category,
+    }));
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, [...services, ...titleCategory]));
 }));
