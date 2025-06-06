@@ -104,7 +104,7 @@ exports.getServiceById = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
     }
     const service = yield serviceModel_1.default.findById(serviceId)
         .populate({
-        path: "providerId", // Populating service provider details
+        path: "providerId",
         select: "name email",
     })
         .lean();

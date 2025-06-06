@@ -67,7 +67,7 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "none",
         secure: true,
         httpOnly: true,
@@ -118,7 +118,7 @@ exports.storeSignUpController = (0, asyncHandler_1.default)((req, res) => __awai
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "none",
         secure: true,
         httpOnly: true,
