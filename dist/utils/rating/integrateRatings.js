@@ -34,7 +34,7 @@ const integrateRatings = (services) => __awaiter(void 0, void 0, void 0, functio
     // Convert rating data into an object for quick lookup
     const ratingsMap = ratingsData.reduce((acc, rating) => {
         acc[rating._id.toString()] = {
-            avgRating: parseFloat(rating.avgRating.toFixed(1)) || 0,
+            avgRating: parseFloat(rating.avgRating.toFixed(1)) || 0, // ✅ Default to 0
             ratingCount: rating.ratingCount || 0,
         };
         return acc;

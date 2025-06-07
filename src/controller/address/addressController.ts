@@ -17,7 +17,7 @@ export const createAddress = asyncHandler(async (req: RequestWithUser, res) => {
     userId: _id,
     street,
     area,
-    city,
+    city, 
     state,
     country,
     pincode,

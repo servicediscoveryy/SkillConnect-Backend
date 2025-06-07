@@ -12,10 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.recordInteraction = exports.viewService = void 0;
+exports.getRecommendedByUser = exports.recordInteraction = exports.viewService = void 0;
+const axios_1 = __importDefault(require("axios"));
+const serviceModel_1 = __importDefault(require("../../models/serviceModel")); // Assuming this is your service model
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
-const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const categoryModel_1 = __importDefault(require("../../models/categoryModel"));
 const userInteraction_1 = __importDefault(require("../../models/userInteraction"));
@@ -102,3 +103,43 @@ const recordInteraction = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.recordInteraction = recordInteraction;
+const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        // @ts-ignore
+        const userId = req.user._id;
+        console.log(userId);
+        // Call external recommendation system
+        const response = yield axios_1.default.get(`https://recommondedsys.onrender.com/recommend/${userId}`);
+        const recommendedServiceIds = (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.map((service) => service.id);
+        if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
+            res.status(200).json({
+                data: [],
+                success: true,
+                error: false,
+                message: "No recommendations found for this user.",
+            });
+            return;
+        }
+        // Fetch services from your database
+        const recommendedServices = yield serviceModel_1.default.find({
+            _id: { $in: recommendedServiceIds },
+        });
+        console.log(recommendedServices);
+        res.status(200).json({
+            data: recommendedServices,
+            success: true,
+            error: false,
+            message: "Recommended services fetched successfully.",
+        });
+    }
+    catch (error) {
+        console.error("Error fetching recommendations:", error.message);
+        res.status(500).json({
+            message: error.message || "Server error",
+            error: true,
+            success: false,
+        });
+    }
+});
+exports.getRecommendedByUser = getRecommendedByUser;

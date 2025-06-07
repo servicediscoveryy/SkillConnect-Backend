@@ -120,45 +120,53 @@ export const recordInteraction = async (
   }
 };
 
+export const getRecommendedByUser = async (
+  req: RequestWithUser,
+  res: Response
+) => {
+  try {
+    // @ts-ignore
+    const userId = req.user._id;
 
-export const getRecommendedByUser = async (req: Request, res: Response) => {
-    try {
-        // @ts-ignore
-        const userId = req.user._id;
+    console.log(userId);
 
-        // Call external recommendation system
-        const response = await axios.get(`https://recommondedsys.onrender.com/recommend/${userId}`);
+    // Call external recommendation system
+    const response = await axios.get(
+      `https://recommondedsys.onrender.com/recommend/${userId}`
+    );
 
-        const recommendedServiceIds: string[] = response.data?.serviceIds;
+    const recommendedServiceIds: string[] = response?.data?.map((service:any)=>service.id);
 
-        if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
-            return res.status(200).json({
-                data: [],
-                success: true,
-                error: false,
-                message: "No recommendations found for this user."
-            });
-        }
 
-        // Fetch services from your database
-        const recommendedServices = await Service.find({ _id: { $in: recommendedServiceIds } });
-
-        res.status(200).json({
-            data: recommendedServices,
-            success: true,
-            error: false,
-            message: "Recommended services fetched successfully."
-        });
-
-    } catch (error: any) {
-        console.error("Error fetching recommendations:", error.message);
-
-        res.status(500).json({
-            message: error.message || "Server error",
-            error: true,
-            success: false
-        });
+    if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
+      res.status(200).json({
+        data: [],
+        success: true,
+        error: false,
+        message: "No recommendations found for this user.",
+      });
+      return;
     }
+
+    // Fetch services from your database
+    const recommendedServices = await Service.find({
+      _id: { $in: recommendedServiceIds },
+    });
+
+    console.log(recommendedServices);
+    res.status(200).json({
+      data: recommendedServices,
+      success: true,
+      error: false,
+      message: "Recommended services fetched successfully.",
+    });
+  } catch (error: any) {
+    console.error("Error fetching recommendations:", error.message);
+
+    res.status(500).json({
+      message: error.message || "Server error",
+      error: true,
+      success: false,
+    });
+  }
 };
-
-

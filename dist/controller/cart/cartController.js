@@ -78,7 +78,7 @@ exports.getAllCart = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
         { $unwind: "$items" },
         {
             $lookup: {
-                from: "services",
+                from: "services", // Ensure this matches your actual collection name
                 localField: "items.serviceId",
                 foreignField: "_id",
                 as: "serviceDetails",
@@ -100,13 +100,8 @@ exports.getAllCart = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0,
 exports.getCartCount = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const userId = req.user._id;
     const cartCount = yield cartModel_1.default.aggregate([
-<<<<<<< HEAD
-        { $match: { userId, status: "active" } },
-        { $unwind: "$items" },
-=======
         { $match: { userId } }, // Ensure only active cart is considered
         { $unwind: "$items" }, // Flatten the items array to count each service separately
->>>>>>> eebf406362d973f5fdf7a5ba630bd530434f17c3
         { $count: "totalItems" }, // Count the number of items
     ]);
     const totalItems = cartCount.length > 0 ? cartCount[0].totalItems : 0;
