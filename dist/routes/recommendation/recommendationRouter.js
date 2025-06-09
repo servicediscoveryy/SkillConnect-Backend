@@ -10,4 +10,5 @@ const recommendationRouter = express_1.default.Router();
 recommendationRouter.patch("/view/:serviceId", recommendationController_1.viewService);
 recommendationRouter.post("/record", authMiddleware_1.authuser, recommendationController_1.recordInteraction);
 recommendationRouter.get("/recommended", authMiddleware_1.authuser, recommendationController_1.getRecommendedByUser);
+recommendationRouter.get("/related/:service", recommendationController_1.getRelatedRecommendation);
 exports.default = recommendationRouter;

@@ -135,8 +135,9 @@ export const getRecommendedByUser = async (
       `https://recommondedsys.onrender.com/recommend/${userId}`
     );
 
-    const recommendedServiceIds: string[] = response?.data?.map((service:any)=>service.id);
-
+    const recommendedServiceIds: string[] = response?.data?.map(
+      (service: any) => service.id
+    );
 
     if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
       res.status(200).json({
@@ -167,6 +168,63 @@ export const getRecommendedByUser = async (
       message: error.message || "Server error",
       error: true,
       success: false,
+    });
+  }
+};
+
+export const getRelatedRecommendation = async (req: Request, res: Response) => {
+  try {
+    const { service } = req.params;
+
+    // 1. fetch the list of recommended titles from your Python service
+    const response = await axios.get<{ recommendations: string[] }>(
+      `http://localhost:5000/recommendations?service=${encodeURIComponent(
+        service
+      )}`
+    );
+    const recommendedTitles = response.data.recommendations;
+    if (!recommendedTitles.length) {
+      return res
+        .status(404)
+        .json({ message: "No recommendations found", data: [] });
+    }
+
+    // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
+    const services = await Service.aggregate([
+      {
+        $match: {
+          status: "active",
+          // match any title in recommendedTitles (case-insensitive exact match)
+          $or: recommendedTitles.map((t) => ({
+            title: { $regex: `^${t}$`, $options: "i" },
+          })),
+        },
+      },
+      {
+        $lookup: {
+          from: "ratings", // your Ratings collection
+          localField: "_id",
+          foreignField: "serviceId",
+          as: "ratings",
+        },
+      },
+      {
+        $addFields: {
+          avgRating: { $avg: "$ratings.rating" },
+        },
+      },
+      {
+        $sort: { avgRating: -1, createdAt: -1 },
+      },
+      // optionally limit to top N
+      // { $limit: 1 }
+    ]);
+
+    return res.json({ recommendations: services });
+  } catch (error: any) {
+    console.error("Error fetching related recommendations:", error);
+    return res.status(500).json({
+      message: error.message || "Internal Server Error",
     });
   }
 };

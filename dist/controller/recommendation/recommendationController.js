@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecommendedByUser = exports.recordInteraction = exports.viewService = void 0;
+exports.getRelatedRecommendation = exports.getRecommendedByUser = exports.recordInteraction = exports.viewService = void 0;
 const axios_1 = __importDefault(require("axios"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel")); // Assuming this is your service model
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -143,3 +143,54 @@ const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, fun
     }
 });
 exports.getRecommendedByUser = getRecommendedByUser;
+const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { service } = req.params;
+        // 1. fetch the list of recommended titles from your Python service
+        const response = yield axios_1.default.get(`http://localhost:5000/recommendations?service=${encodeURIComponent(service)}`);
+        const recommendedTitles = response.data.recommendations;
+        if (!recommendedTitles.length) {
+            return res
+                .status(404)
+                .json({ message: "No recommendations found", data: [] });
+        }
+        // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
+        const services = yield serviceModel_1.default.aggregate([
+            {
+                $match: {
+                    status: "active",
+                    // match any title in recommendedTitles (case-insensitive exact match)
+                    $or: recommendedTitles.map((t) => ({
+                        title: { $regex: `^${t}$`, $options: "i" },
+                    })),
+                },
+            },
+            {
+                $lookup: {
+                    from: "ratings", // your Ratings collection
+                    localField: "_id",
+                    foreignField: "serviceId",
+                    as: "ratings",
+                },
+            },
+            {
+                $addFields: {
+                    avgRating: { $avg: "$ratings.rating" },
+                },
+            },
+            {
+                $sort: { avgRating: -1, createdAt: -1 },
+            },
+            // optionally limit to top N
+            // { $limit: 1 }
+        ]);
+        return res.json({ recommendations: services });
+    }
+    catch (error) {
+        console.error("Error fetching related recommendations:", error);
+        return res.status(500).json({
+            message: error.message || "Internal Server Error",
+        });
+    }
+});
+exports.getRelatedRecommendation = getRelatedRecommendation;
