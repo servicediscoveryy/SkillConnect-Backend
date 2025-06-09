@@ -135,6 +135,8 @@ export const getRecommendedByUser = async (
       `https://recommondedsys.onrender.com/recommend/${userId}`
     );
 
+    console.log(response);
+
     const recommendedServiceIds: string[] = response?.data?.map(
       (service: any) => service.id
     );
@@ -176,17 +178,26 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
   try {
     const { service } = req.params;
 
+    console.log(service);
+
     // 1. fetch the list of recommended titles from your Python service
     const response = await axios.get<{ recommendations: string[] }>(
       `http://localhost:5000/recommendations?service=${encodeURIComponent(
         service
       )}`
     );
+
+    console.log(response);
+    
     const recommendedTitles = response.data.recommendations;
     if (!recommendedTitles.length) {
-      return res
-        .status(404)
-        .json({ message: "No recommendations found", data: [] });
+      res.status(200).json({
+        data: [],
+        success: true,
+        error: false,
+        message: "No recommendations found.",
+      });
+      return;
     }
 
     // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
@@ -217,14 +228,20 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
         $sort: { avgRating: -1, createdAt: -1 },
       },
       // optionally limit to top N
-      // { $limit: 1 }
+      { $limit: 1 },
     ]);
 
-    return res.json({ recommendations: services });
+    res.status(200).json({
+      data: services,
+      success: true,
+      error: false,
+      message: "Recommended services fetched successfully.",
+    });
   } catch (error: any) {
     console.error("Error fetching related recommendations:", error);
-    return res.status(500).json({
+    res.status(500).json({
       message: error.message || "Internal Server Error",
     });
+    return;
   }
 };
