@@ -111,6 +111,7 @@ const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, fun
         console.log(userId);
         // Call external recommendation system
         const response = yield axios_1.default.get(`https://recommondedsys.onrender.com/recommend/${userId}`);
+        console.log(response);
         const recommendedServiceIds = (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.map((service) => service.id);
         if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
             res.status(200).json({
@@ -146,13 +147,18 @@ exports.getRecommendedByUser = getRecommendedByUser;
 const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { service } = req.params;
+        console.log(service);
         // 1. fetch the list of recommended titles from your Python service
         const response = yield axios_1.default.get(`http://localhost:5000/recommendations?service=${encodeURIComponent(service)}`);
+        console.log(response);
         const recommendedTitles = response.data.recommendations;
         if (!recommendedTitles.length) {
-            res
-                .status(404)
-                .json({ message: "No recommendations found", data: [] });
+            res.status(200).json({
+                data: [],
+                success: true,
+                error: false,
+                message: "No recommendations found.",
+            });
             return;
         }
         // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
@@ -182,9 +188,15 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
             {
                 $sort: { avgRating: -1, createdAt: -1 },
             },
+            // optionally limit to top N
+            { $limit: 1 },
         ]);
-        res.json({ recommendations: services });
-        return;
+        res.status(200).json({
+            data: services,
+            success: true,
+            error: false,
+            message: "Recommended services fetched successfully.",
+        });
     }
     catch (error) {
         console.error("Error fetching related recommendations:", error);

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProviderOrderStats = exports.CompleteBooking = exports.GenerateOtpBookingComplete = exports.getProviderBookings = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
+exports.getProviderOrderStats = exports.CompleteBooking = exports.GenerateOtpBookingComplete = exports.getProviderBookings = exports.cancelBookingByUser = exports.cancelBooking = exports.AceeptBookings = exports.updateBookingStatus = exports.getUserBookings = exports.getBookingById = exports.initiatePayment = exports.createBooking = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -29,6 +29,7 @@ exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     const { serviceId, addressId } = req.body;
     if (!req.user)
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
+    console.log(serviceId);
     if (!mongoose_1.default.Types.ObjectId.isValid(serviceId) ||
         !mongoose_1.default.Types.ObjectId.isValid(addressId)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid Fields");
@@ -57,6 +58,7 @@ exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         serviceId,
     });
     const savedBooking = yield newBooking.save();
+    // const emptyCart = await Cart.findByIdAndUpdate
     res
         .status(201)
         .json(new ApiResponse_1.default(201, savedBooking, "Booking created successfully"));
@@ -122,11 +124,44 @@ exports.getUserBookings = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
     const bookings = yield bookingModel_1.default.find({ userId: req.user._id })
         .populate("serviceId", "title category price")
-        .populate("addressId") // Populating address details
+        .populate("addressId")
         .sort({ createdAt: -1 });
+    console.log(bookings);
+    // Group bookings by orderId
+    const groupedBookings = {};
+    bookings.forEach((booking) => {
+        const orderId = booking === null || booking === void 0 ? void 0 : booking.orderId;
+        // Only group by orderId if it's a non-empty string
+        if (typeof orderId === "string" && orderId.trim() !== "") {
+            if (!groupedBookings[orderId]) {
+                groupedBookings[orderId] = {
+                    orderId: booking.orderId,
+                    amount: booking.amount,
+                    userId: booking.userId,
+                    paymentMethod: booking.paymentMethod,
+                    orderStatus: booking.orderStatus,
+                    paymentStatus: booking.paymentStatus,
+                    createdAt: booking.createdAt,
+                    updatedAt: booking.updatedAt,
+                    address: booking.addressId,
+                    services: [],
+                };
+            }
+            groupedBookings[orderId].services.push({
+                _id: booking.serviceId._id,
+                //@ts-expect-error
+                title: booking.serviceId.title,
+                //@ts-expect-error
+                category: booking.serviceId.category,
+                //@ts-expect-error
+                price: booking.serviceId.price,
+            });
+        }
+    });
+    const result = Object.values(groupedBookings); // Convert to array
     res
         .status(statusCodes_1.default.ok)
-        .json(new ApiResponse_1.default(statusCodes_1.default.ok, bookings, "User bookings fetched"));
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, result, "Grouped bookings fetched"));
 }));
 // Update Booking Status
 exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -324,6 +359,24 @@ exports.cancelBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     res
         .status(statusCodes_1.default.ok)
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, {}, "Booking cancelled successfully"));
+}));
+exports.cancelBookingByUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { orderId } = req.params;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
+    if (!orderId) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Order ID is required");
+    }
+    // Find all bookings matching orderId and userId
+    const bookings = yield bookingModel_1.default.find({ orderId, userId });
+    if (!bookings || bookings.length === 0) {
+        throw new ApiError_1.default(statusCodes_1.default.notFound, "Booking not found or unauthorized");
+    }
+    // Update orderStatus to "cancelled" for all
+    yield Promise.all(bookings.map((booking) => bookingModel_1.default.findByIdAndUpdate(booking._id, { orderStatus: "cancelled", paymentStatus: "failed" }, { new: true })));
+    res
+        .status(statusCodes_1.default.ok)
+        .json(new ApiResponse_1.default(statusCodes_1.default.ok, null, "Booking cancelled successfully"));
 }));
 // // providers booking
 // export const getProviderBookings = asyncHandler(

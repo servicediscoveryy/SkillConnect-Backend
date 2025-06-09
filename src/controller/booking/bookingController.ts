@@ -11,6 +11,7 @@ import Service from "../../models/serviceModel";
 import Address from "../../models/addressModel";
 import { sendEmail } from "../../utils/notification/email";
 import { storeOTP, verifyOTP } from "../../utils/notification/otp";
+import Cart from "../../models/cartModel";
 
 // Create a Booking
 export const createBooking = asyncHandler(
@@ -18,6 +19,7 @@ export const createBooking = asyncHandler(
     const { serviceId, addressId } = req.body;
     if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
 
+    console.log(serviceId);
     if (
       !mongoose.Types.ObjectId.isValid(serviceId) ||
       !mongoose.Types.ObjectId.isValid(addressId)
@@ -57,6 +59,8 @@ export const createBooking = asyncHandler(
     });
 
     const savedBooking = await newBooking.save();
+
+    // const emptyCart = await Cart.findByIdAndUpdate
 
     res
       .status(201)
@@ -140,13 +144,50 @@ export const getUserBookings = asyncHandler(
 
     const bookings = await Booking.find({ userId: req.user._id })
       .populate("serviceId", "title category price")
-      .populate("addressId") // Populating address details
-
+      .populate("addressId")
       .sort({ createdAt: -1 });
+
+    console.log(bookings);
+    // Group bookings by orderId
+    const groupedBookings: Record<string, any> = {};
+
+    bookings.forEach((booking) => {
+      const orderId = booking?.orderId;
+
+      // Only group by orderId if it's a non-empty string
+      if (typeof orderId === "string" && orderId.trim() !== "") {
+        if (!groupedBookings[orderId]) {
+          groupedBookings[orderId] = {
+            orderId: booking.orderId,
+            amount: booking.amount,
+            userId: booking.userId,
+            paymentMethod: booking.paymentMethod,
+            orderStatus: booking.orderStatus,
+            paymentStatus: booking.paymentStatus,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt,
+            address: booking.addressId,
+            services: [],
+          };
+        }
+
+        groupedBookings[orderId].services.push({
+          _id: booking.serviceId._id,
+          //@ts-expect-error
+          title: booking.serviceId.title,
+          //@ts-expect-error
+          category: booking.serviceId.category,
+          //@ts-expect-error
+          price: booking.serviceId.price,
+        });
+      }
+    });
+
+    const result = Object.values(groupedBookings); // Convert to array
 
     res
       .status(STATUS.ok)
-      .json(new ApiResponse(STATUS.ok, bookings, "User bookings fetched"));
+      .json(new ApiResponse(STATUS.ok, result, "Grouped bookings fetched"));
   }
 );
 
@@ -390,6 +431,39 @@ export const cancelBooking = asyncHandler(
     res
       .status(STATUS.ok)
       .json(new ApiResponse(STATUS.ok, {}, "Booking cancelled successfully"));
+  }
+);
+
+export const cancelBookingByUser = asyncHandler(
+  async (req: RequestWithUser, res: Response) => {
+    const { orderId } = req.params;
+    const userId = req.user?._id;
+
+    if (!orderId) {
+      throw new ApiError(STATUS.badRequest, "Order ID is required");
+    }
+
+    // Find all bookings matching orderId and userId
+    const bookings = await Booking.find({ orderId, userId });
+
+    if (!bookings || bookings.length === 0) {
+      throw new ApiError(STATUS.notFound, "Booking not found or unauthorized");
+    }
+
+    // Update orderStatus to "cancelled" for all
+    await Promise.all(
+      bookings.map((booking) =>
+        Booking.findByIdAndUpdate(
+          booking._id,
+          { orderStatus: "cancelled", paymentStatus: "failed" },
+          { new: true }
+        )
+      )
+    );
+
+    res
+      .status(STATUS.ok)
+      .json(new ApiResponse(STATUS.ok, null, "Booking cancelled successfully"));
   }
 );
 
