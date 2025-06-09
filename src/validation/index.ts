@@ -41,6 +41,10 @@ const createServiceValidationSchema = Joi.object({
   price: Joi.number().min(0).required(),
   tags: Joi.array().items(Joi.string()).optional(),
   location: Joi.string().required(),
+  coordinates: Joi.array()
+  .items(Joi.number().required()) // long and lat
+  .length(2)
+  .required(), 
 });
 
 const addressValidationSchema = Joi.object({

@@ -36,6 +36,17 @@ const serviceSchema = new mongoose.Schema(
       required: true,
       set: (value: string | undefined) => (value ? value.toLowerCase() : ""),
     },
+    geoLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        required: true,
+      },
+    },
     tags: {
       type: [String],
       set: (tags: string[] | undefined) =>

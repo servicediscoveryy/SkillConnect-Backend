@@ -184,9 +184,10 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
     );
     const recommendedTitles = response.data.recommendations;
     if (!recommendedTitles.length) {
-      return res
+       res
         .status(404)
         .json({ message: "No recommendations found", data: [] });
+        return;
     }
 
     // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
@@ -216,15 +217,16 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
       {
         $sort: { avgRating: -1, createdAt: -1 },
       },
-      // optionally limit to top N
-      // { $limit: 1 }
+    
     ]);
 
-    return res.json({ recommendations: services });
+     res.json({ recommendations: services });
+     return;
   } catch (error: any) {
     console.error("Error fetching related recommendations:", error);
-    return res.status(500).json({
+     res.status(500).json({
       message: error.message || "Internal Server Error",
     });
+    return;
   }
 };

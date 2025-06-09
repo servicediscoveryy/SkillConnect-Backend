@@ -150,9 +150,10 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
         const response = yield axios_1.default.get(`http://localhost:5000/recommendations?service=${encodeURIComponent(service)}`);
         const recommendedTitles = response.data.recommendations;
         if (!recommendedTitles.length) {
-            return res
+            res
                 .status(404)
                 .json({ message: "No recommendations found", data: [] });
+            return;
         }
         // 2. aggregate to find those Service docs, join ratings, compute avgRating, sort, and return
         const services = yield serviceModel_1.default.aggregate([
@@ -167,7 +168,7 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
             },
             {
                 $lookup: {
-                    from: "ratings", // your Ratings collection
+                    from: "ratings",
                     localField: "_id",
                     foreignField: "serviceId",
                     as: "ratings",
@@ -181,16 +182,16 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
             {
                 $sort: { avgRating: -1, createdAt: -1 },
             },
-            // optionally limit to top N
-            // { $limit: 1 }
         ]);
-        return res.json({ recommendations: services });
+        res.json({ recommendations: services });
+        return;
     }
     catch (error) {
         console.error("Error fetching related recommendations:", error);
-        return res.status(500).json({
+        res.status(500).json({
             message: error.message || "Internal Server Error",
         });
+        return;
     }
 });
 exports.getRelatedRecommendation = getRelatedRecommendation;

@@ -17,32 +17,46 @@ import { getUsersWhoBookedProviderServices } from "../../services/userServices";
 // Create a new service
 export const createService = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
-    const { title, description, category, image, price, tags, location } =
-      req.body;
+    const {
+      title,
+      description,
+      category,
+      image,
+      price,
+      tags,
+      location,
+      coordinates,
+    } = req.body;
 
     validateRequest(createServiceValidationSchema, req.body);
 
     if (!Array.isArray(image)) {
-      throw new ApiError(
-        STATUS.badRequest,
-        "Images should be an array of urls"
-      );
+      throw new ApiError(STATUS.badRequest, "Images should be an array of URLs");
     }
 
     if (!category) {
       throw new ApiError(STATUS.badRequest, "Choose Right Category");
     }
 
+    if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+      throw new ApiError(STATUS.badRequest, "Invalid coordinates (lng, lat required)");
+    }
+
     const newService = new Service({
+      // @ts-ignore
       providerId: req.user._id,
       title,
       description,
-      category: category,
+      category,
       image,
       price,
       status: "active",
       location,
       tags,
+      geoLocation: {
+        type: "Point",
+        coordinates,
+      },
     });
 
     const savedService = await newService.save();
@@ -53,7 +67,47 @@ export const createService = asyncHandler(
   }
 );
 
+
+// export const createService = asyncHandler(
+//   async (req: RequestWithUser, res: Response) => {
+//     const { title, description, category, image, price, tags, location } =
+//       req.body;
+
+//     validateRequest(createServiceValidationSchema, req.body);
+
+//     if (!Array.isArray(image)) {
+//       throw new ApiError(
+//         STATUS.badRequest,
+//         "Images should be an array of urls"
+//       );
+//     }
+
+//     if (!category) {
+//       throw new ApiError(STATUS.badRequest, "Choose Right Category");
+//     }
+
+//     const newService = new Service({
+//       providerId: req.user._id,
+//       title,
+//       description,
+//       category: category,
+//       image,
+//       price,
+//       status: "active",
+//       location,
+//       tags,
+//     });
+
+//     const savedService = await newService.save();
+
+//     res
+//       .status(201)
+//       .json(new ApiResponse(201, savedService, "Service created successfully"));
+//   }
+// );
+
 // Update service
+
 export const updateService = asyncHandler(
   async (req: Request, res: Response) => {
     const { title, description, category, image, price, tags } = req.body;
@@ -141,8 +195,8 @@ export const getProviderServices = asyncHandler(
   })
 );
 
-export const getProviderServiceById = asyncHandler(
-  async (req: RequestWithUser, res) => {
+export const getProviderServiceById = asyncHandler(async (req: RequestWithUser, res) =>{
+    
     const { id } = req.params;
 
     try {
@@ -153,9 +207,10 @@ export const getProviderServiceById = asyncHandler(
       );
 
       if (!service) {
-        return res
+         res
           .status(STATUS.notFound)
           .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
+          return;
       }
 
       res

@@ -74,9 +74,9 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production", // Only in HTTPS
+        secure: process.env.NODE_ENV === "production",
         httpOnly: true,
     })
         .status(200)
@@ -125,7 +125,7 @@ exports.storeSignUpController = (0, asyncHandler_1.default)((req, res) => __awai
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "none",
         // secure: true,
         httpOnly: true,
@@ -197,34 +197,38 @@ const updateUserProfile = (req, res) => __awaiter(void 0, void 0, void 0, functi
         // Check if phone number is already in use by another user
         const existingUser = yield userModel_1.default.findOne({ phone });
         if (existingUser) {
-            return res.status(400).json({
+            res.status(400).json({
                 message: "Phone number is already in use",
                 error: true,
                 success: false,
             });
+            return;
         }
         // Update user profile
         const updatedUser = yield userModel_1.default.findByIdAndUpdate(userId, { firstName, lastName, phone, profilePicture }, { new: true });
         if (!updatedUser) {
-            return res.status(404).json({
+            res.status(404).json({
                 message: "User not found",
                 error: true,
                 success: false,
             });
+            return;
         }
-        return res.status(200).json({
+        res.status(200).json({
             message: "Profile updated successfully",
             data: updatedUser,
             success: true,
             error: false,
         });
+        return;
     }
     catch (error) {
-        return res.status(500).json({
+        res.status(500).json({
             message: error.message || "Internal Server Error",
             error: true,
             success: false,
         });
+        return;
     }
 });
 exports.updateUserProfile = updateUserProfile;
