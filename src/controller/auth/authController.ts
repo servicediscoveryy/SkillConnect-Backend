@@ -18,19 +18,21 @@ export const sendOtpController = asyncHandler(
     const { email } = req.body;
     console.log(req.body);
     // Check if user exists
-    const user = await User.findOne({ email });
+    const isExist = await User.findOne({ email });
+    
+    if (isExist) {
+      const otp = await storeOTP(email);
+      // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
+      sendEmail(email, "Otp Verification", otp);
+      console.log(`OTP for ${email}: ${otp}`);
+    }else{
 
-    if (!user) {
-      const response = new ApiError(404, "User does not exist");
-      res.status(response.statusCode).json(response.toJSON());
-      return;
+      const user = await User.findOne({ email });
+
     }
 
     // Generate and store OTP in Redis (valid for 5 minutes)
-    const otp = await storeOTP(email);
-    // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
-    sendEmail(email, "Otp Verification", otp);
-    console.log(`OTP for ${email}: ${otp}`);
+   
 
     res.json(new ApiResponse(200, { email }, "OTP sent successfully"));
     return;

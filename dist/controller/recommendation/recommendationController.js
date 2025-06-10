@@ -174,7 +174,7 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
             },
             {
                 $lookup: {
-                    from: "ratings", // your Ratings collection
+                    from: "ratings",
                     localField: "_id",
                     foreignField: "serviceId",
                     as: "ratings",

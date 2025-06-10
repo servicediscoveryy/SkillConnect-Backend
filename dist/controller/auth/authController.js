@@ -28,17 +28,17 @@ exports.sendOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(
     const { email } = req.body;
     console.log(req.body);
     // Check if user exists
-    const user = yield userModel_1.default.findOne({ email });
-    if (!user) {
-        const response = new ApiError_1.default(404, "User does not exist");
-        res.status(response.statusCode).json(response.toJSON());
-        return;
+    const isExist = yield userModel_1.default.findOne({ email });
+    if (isExist) {
+        const otp = yield (0, otp_1.storeOTP)(email);
+        // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
+        (0, email_1.sendEmail)(email, "Otp Verification", otp);
+        console.log(`OTP for ${email}: ${otp}`);
+    }
+    else {
+        const user = yield userModel_1.default.findOne({ email });
     }
     // Generate and store OTP in Redis (valid for 5 minutes)
-    const otp = yield (0, otp_1.storeOTP)(email);
-    // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
-    (0, email_1.sendEmail)(email, "Otp Verification", otp);
-    console.log(`OTP for ${email}: ${otp}`);
     res.json(new ApiResponse_1.default(200, { email }, "OTP sent successfully"));
     return;
 }));
@@ -74,9 +74,9 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production", // Only in HTTPS
+        secure: process.env.NODE_ENV === "production",
         httpOnly: true,
     })
         .status(200)
@@ -125,7 +125,7 @@ exports.storeSignUpController = (0, asyncHandler_1.default)((req, res) => __awai
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "none",
         // secure: true,
         httpOnly: true,

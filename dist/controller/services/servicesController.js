@@ -124,7 +124,7 @@ exports.getServiceById = (0, asyncHandler_1.default)((req, res) => __awaiter(voi
     }
     const service = yield serviceModel_1.default.findById(serviceId)
         .populate({
-        path: "providerId", // Populating service provider details
+        path: "providerId",
         select: "name email",
     })
         .lean();
@@ -177,7 +177,7 @@ exports.getSearchSuggestions = (0, asyncHandler_1.default)((req, res) => __await
     // Find services where the title matches
     const services = yield serviceModel_1.default.find({
         $or: [
-            { title: { $regex: query, $options: "i" } }, // Case-insensitive search in title
+            { title: { $regex: query, $options: "i" } },
             { description: { $regex: query, $options: "i" } },
             { location: { $regex: query, $options: "i" } },
         ],
