@@ -29,7 +29,6 @@ exports.createBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
     const { serviceId, addressId } = req.body;
     if (!req.user)
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
-    console.log(serviceId);
     if (!mongoose_1.default.Types.ObjectId.isValid(serviceId) ||
         !mongoose_1.default.Types.ObjectId.isValid(addressId)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid Fields");
@@ -168,7 +167,6 @@ exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaite
     var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const { bookingId } = req.params;
     const { orderStatus, paymentStatus } = req.body;
-    console.log("inside the booking");
     const validOrderStatuses = [
         "accepted",
         "pending",
@@ -186,7 +184,6 @@ exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     if (!booking)
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Booking not found");
-    console.log(booking);
     // Validate order status
     if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid order status value");

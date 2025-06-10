@@ -11,7 +11,6 @@ const razorpay = new Razorpay({
 });
 
 // export const createOrder = async (req: RequestWithUser, res: Response) => {
-//   console.log("create order inside");
 //   const { service } = req.body;
 //   const userId = req.user._id;
 
@@ -52,7 +51,6 @@ const razorpay = new Razorpay({
 // };
 
 export const createOrder = async (req: any, res: Response) => {
-  console.log("🔁 Create order inside");
   const { service, method } = req.body;
   const userId = req.user._id;
   const addressId = req.body.address; // you should set this before calling this controller

@@ -162,7 +162,6 @@ export const deleteService = asyncHandler(
 export const getProviderServices = asyncHandler(
   asyncHandler(async (req: RequestWithUser, res) => {
     const id = req?.user._id;
-    console.log("services", id);
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -191,7 +190,6 @@ export const getProviderServices = asyncHandler(
       .populate("category", "category")
       .skip((page - 1) * limit)
       .limit(limit);
-    console.log(services);
     // Send the response with pagination info
     res.status(STATUS.ok).json(
       new ApiResponse(STATUS.ok, services, "Services fetched successfully", {
@@ -286,7 +284,6 @@ export const getUsersForProviderBookings = asyncHandler(
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    console.log("INSIDE THE BOOKINGS USERS");
     const { users, totalUsers } = await getUsersWhoBookedProviderServices(
       req.user._id,
       page,

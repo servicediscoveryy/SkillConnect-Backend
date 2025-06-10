@@ -21,7 +21,6 @@ const razorpay = new razorpay_1.default({
     key_secret: process.env.razorpaySecret, // Replace with your Razorpay Key Secret
 });
 // export const createOrder = async (req: RequestWithUser, res: Response) => {
-//   console.log("create order inside");
 //   const { service } = req.body;
 //   const userId = req.user._id;
 //   // book the each service for user
@@ -56,7 +55,6 @@ const razorpay = new razorpay_1.default({
 //   }
 // };
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("🔁 Create order inside");
     const { service, method } = req.body;
     const userId = req.user._id;
     const addressId = req.body.address; // you should set this before calling this controller

@@ -61,6 +61,8 @@ export const recordInteraction = async (
       return;
     }
 
+    console.log(service);
+
     // Check if the category exists
     const category = await Category.findById(service.category);
     if (!category) {

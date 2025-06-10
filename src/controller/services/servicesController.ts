@@ -16,8 +16,6 @@ export const getServices = asyncHandler(async (req, res) => {
   const filter: any = { status: "active" };
   let categoryIds: string[] = [];
 
-  console.log(category);
-
   // 🔍 Search for matching categories if query is provided
   if (query) {
     const matchedCategories = await Category.find({
