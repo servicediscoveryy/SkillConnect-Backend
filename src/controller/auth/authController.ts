@@ -1,6 +1,6 @@
 import { Request, response, Response } from "express";
 import jwt from "jsonwebtoken";
-import User from "../../models/userModel"; // Assuming the User model is in models/User
+import User from "../../models/userModel";
 import { RequestWithUser } from "../../types/RequestWithUser";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/response/ApiError";

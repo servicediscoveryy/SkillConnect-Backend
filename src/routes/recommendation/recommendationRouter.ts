@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  getNearbyServices,
   getRecommendedByUser,
   getRelatedRecommendation,
   recordInteraction,
@@ -16,5 +17,7 @@ recommendationRouter.post("/record", authuser, recordInteraction);
 recommendationRouter.get("/recommended", authuser, getRecommendedByUser);
 
 recommendationRouter.get("/related/:service", getRelatedRecommendation);
+
+recommendationRouter.get("/near-services", authuser, getNearbyServices);
 
 export default recommendationRouter;

@@ -42,6 +42,10 @@ const createServiceValidationSchema = joi_1.default.object({
     price: joi_1.default.number().min(0).required(),
     tags: joi_1.default.array().items(joi_1.default.string()).optional(),
     location: joi_1.default.string().required(),
+    coordinates: joi_1.default.array()
+        .items(joi_1.default.number().required()) // long and lat
+        .length(2)
+        .required(),
 });
 exports.createServiceValidationSchema = createServiceValidationSchema;
 const addressValidationSchema = joi_1.default.object({

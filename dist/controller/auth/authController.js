@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateUserProfile = exports.getProfileController = exports.userLogoutController = exports.providerSignupController = exports.storeSignUpController = exports.userSignupController = exports.verifyOtpController = exports.sendOtpController = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const userModel_1 = __importDefault(require("../../models/userModel")); // Assuming the User model is in models/User
+const userModel_1 = __importDefault(require("../../models/userModel"));
 const asyncHandler_1 = __importDefault(require("../../utils/asyncHandler"));
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));

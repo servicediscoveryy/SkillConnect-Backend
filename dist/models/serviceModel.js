@@ -55,5 +55,7 @@ const serviceSchema = new mongoose_1.default.Schema({
         set: (tags) => tags ? tags.map((tag) => tag.toLowerCase()) : [],
     },
 }, { timestamps: true });
+// Add the 2dsphere index required for geospatial queries
+serviceSchema.index({ geoLocation: "2dsphere" });
 const Service = mongoose_1.default.model("Service", serviceSchema);
 exports.default = Service;

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRelatedRecommendation = exports.getRecommendedByUser = exports.recordInteraction = exports.viewService = void 0;
+exports.getNearbyServices = exports.getRelatedRecommendation = exports.getRecommendedByUser = exports.recordInteraction = exports.viewService = void 0;
 const axios_1 = __importDefault(require("axios"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel")); // Assuming this is your service model
 const ApiError_1 = __importDefault(require("../../utils/response/ApiError"));
@@ -207,3 +207,49 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.getRelatedRecommendation = getRelatedRecommendation;
+const getNearbyServices = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const longitude = parseFloat(req.query.longitude);
+        const latitude = parseFloat(req.query.latitude);
+        if (isNaN(longitude) || isNaN(latitude)) {
+            res.status(400).json({ message: "Invalid coordinates" });
+            return;
+        }
+        // Option 1: Simple $near query (works well and is fast)
+        const services = yield serviceModel_1.default.find({
+            geoLocation: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [longitude, latitude],
+                    },
+                    $maxDistance: 5000, // 5 km radius
+                },
+            },
+            status: "active",
+        });
+        // Option 2 (Optional): Use aggregation to include distance
+        /*
+        const services = await Service.aggregate([
+          {
+            $geoNear: {
+              near: {
+                type: "Point",
+                coordinates: [longitude, latitude],
+              },
+              distanceField: "distance",
+              maxDistance: 5000,
+              spherical: true,
+              query: { status: "active" },
+            },
+          },
+        ]);
+        */
+        res.status(200).json({ services });
+    }
+    catch (error) {
+        console.error("Error fetching nearby services:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+});
+exports.getNearbyServices = getNearbyServices;

@@ -6,6 +6,7 @@ import Rating from "../../models/ratingModel";
 import Service from "../../models/serviceModel";
 import { RequestWithUser } from "../../types/RequestWithUser";
 import STATUS from "../../data/statusCodes";
+
 import {
   createServiceValidationSchema,
   ratingValidationSchema,
@@ -17,15 +18,23 @@ import { getUsersWhoBookedProviderServices } from "../../services/userServices";
 // Create a new service
 export const createService = asyncHandler(
   async (req: RequestWithUser, res: Response) => {
-    const { title, description, category, image, price, tags, location } =
-      req.body;
+    const {
+      title,
+      description,
+      category,
+      image,
+      price,
+      tags,
+      location,
+      coordinates,
+    } = req.body;
 
     validateRequest(createServiceValidationSchema, req.body);
 
     if (!Array.isArray(image)) {
       throw new ApiError(
         STATUS.badRequest,
-        "Images should be an array of urls"
+        "Images should be an array of URLs"
       );
     }
 
@@ -33,16 +42,28 @@ export const createService = asyncHandler(
       throw new ApiError(STATUS.badRequest, "Choose Right Category");
     }
 
+    if (!Array.isArray(coordinates) || coordinates.length !== 2) {
+      throw new ApiError(
+        STATUS.badRequest,
+        "Invalid coordinates (lng, lat required)"
+      );
+    }
+
     const newService = new Service({
+      // @ts-ignore
       providerId: req.user._id,
       title,
       description,
-      category: category,
+      category,
       image,
       price,
       status: "active",
       location,
       tags,
+      geoLocation: {
+        type: "Point",
+        coordinates,
+      },
     });
 
     const savedService = await newService.save();
@@ -53,14 +74,56 @@ export const createService = asyncHandler(
   }
 );
 
-// Update service
 export const updateService = asyncHandler(
   async (req: Request, res: Response) => {
-    const { title, description, category, image, price, tags } = req.body;
+    const {
+      title,
+      description,
+      category,
+      price,
+      tags,
+      location,
+      status,
+      image, // should be an array of Cloudinary URLs
+      coordinates,
+    } = req.body;
+
+    if (!Array.isArray(image)) {
+      throw new ApiError(
+        STATUS.badRequest,
+        "Images should be an array of URLs"
+      );
+    }
+
+    let parsedCoordinates: number[] = [];
+    try {
+      parsedCoordinates = JSON.parse(coordinates); // frontend sends it as JSON string
+    } catch {
+      throw new ApiError(STATUS.badRequest, "Invalid coordinates format");
+    }
+
+    if (!Array.isArray(parsedCoordinates) || parsedCoordinates.length !== 2) {
+      throw new ApiError(STATUS.badRequest, "Coordinates must be [lng, lat]");
+    }
+
+    const updatePayload: any = {
+      title,
+      description,
+      category,
+      price,
+      tags,
+      location,
+      status,
+      image,
+      geoLocation: {
+        type: "Point",
+        coordinates: parsedCoordinates,
+      },
+    };
 
     const updatedService = await Service.findByIdAndUpdate(
       req.params.serviceId,
-      { title, description, category, image, price, tags },
+      updatePayload,
       { new: true }
     );
 
@@ -156,7 +219,6 @@ export const getProviderServiceById = asyncHandler(
         res
           .status(STATUS.notFound)
           .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
-        return;
       }
 
       res

@@ -188,7 +188,7 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
     );
 
     console.log(response);
-    
+
     const recommendedTitles = response.data.recommendations;
     if (!recommendedTitles.length) {
       res.status(200).json({
@@ -243,5 +243,54 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
       message: error.message || "Internal Server Error",
     });
     return;
+  }
+};
+
+export const getNearbyServices = async (req: Request, res: Response) => {
+  try {
+    const longitude = parseFloat(req.query.longitude as string);
+    const latitude = parseFloat(req.query.latitude as string);
+
+    if (isNaN(longitude) || isNaN(latitude)) {
+      res.status(400).json({ message: "Invalid coordinates" });
+      return;
+    }
+
+    // Option 1: Simple $near query (works well and is fast)
+    const services = await Service.find({
+      geoLocation: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+          $maxDistance: 5000, // 5 km radius
+        },
+      },
+      status: "active",
+    });
+
+    // Option 2 (Optional): Use aggregation to include distance
+    /*
+    const services = await Service.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+          distanceField: "distance",
+          maxDistance: 5000,
+          spherical: true,
+          query: { status: "active" },
+        },
+      },
+    ]);
+    */
+
+    res.status(200).json({ services });
+  } catch (error) {
+    console.error("Error fetching nearby services:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
