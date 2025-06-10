@@ -27,12 +27,14 @@ const otp_1 = require("../../utils/notification/otp");
 exports.sendOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     console.log(req.body);
+    if (!email) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Email is Required");
+    }
     // Check if user exists
     const user = yield userModel_1.default.findOne({ email });
     if (!user) {
-        const response = new ApiError_1.default(404, "User does not exist");
-        res.status(response.statusCode).json(response.toJSON());
-        return;
+        const user = new userModel_1.default({ email: email });
+        yield user.save();
     }
     // Generate and store OTP in Redis (valid for 5 minutes)
     const otp = yield (0, otp_1.storeOTP)(email);

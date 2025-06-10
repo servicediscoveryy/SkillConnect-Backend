@@ -7,6 +7,7 @@ import ApiResponse from "../../utils/response/ApiResponse";
 import { RequestWithUser } from "../../types/RequestWithUser";
 import Category from "../../models/categoryModel";
 import UserInteraction from "../../models/userInteraction";
+import mongoose from "mongoose";
 
 export const viewService = async (req: Request, res: Response) => {
   try {
@@ -128,7 +129,7 @@ export const getRecommendedByUser = async (
     // @ts-ignore
     const userId = req.user._id;
 
-    console.log(userId);
+    const respon = await axios.get("https://recommondedsys.onrender.com/train");
 
     // Call external recommendation system
     const response = await axios.get(
@@ -178,16 +179,12 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
   try {
     const { service } = req.params;
 
-    console.log(service);
-
     // 1. fetch the list of recommended titles from your Python service
     const response = await axios.get<{ recommendations: string[] }>(
       `http://localhost:5000/recommendations?service=${encodeURIComponent(
         service
       )}`
     );
-
-    console.log(response);
 
     const recommendedTitles = response.data.recommendations;
     if (!recommendedTitles.length) {
@@ -250,28 +247,19 @@ export const getNearbyServices = async (req: Request, res: Response) => {
   try {
     const longitude = parseFloat(req.query.longitude as string);
     const latitude = parseFloat(req.query.latitude as string);
+    const categoryId =
+      (req.query.categoryId as string) || "67dbdab6dfdd315f88f954e8";
 
     if (isNaN(longitude) || isNaN(latitude)) {
       res.status(400).json({ message: "Invalid coordinates" });
       return;
     }
 
-    // Option 1: Simple $near query (works well and is fast)
-    const services = await Service.find({
-      geoLocation: {
-        $near: {
-          $geometry: {
-            type: "Point",
-            coordinates: [longitude, latitude],
-          },
-          $maxDistance: 5000, // 5 km radius
-        },
-      },
-      status: "active",
-    });
+    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+      res.status(400).json({ message: "Invalid category ID" });
+      return;
+    }
 
-    // Option 2 (Optional): Use aggregation to include distance
-    /*
     const services = await Service.aggregate([
       {
         $geoNear: {
@@ -280,15 +268,23 @@ export const getNearbyServices = async (req: Request, res: Response) => {
             coordinates: [longitude, latitude],
           },
           distanceField: "distance",
-          maxDistance: 5000,
+          maxDistance: 50000, // 50 km
           spherical: true,
-          query: { status: "active" },
+          query: {
+            status: "active",
+            category: new mongoose.Types.ObjectId(categoryId),
+          },
         },
       },
+      { $sort: { distance: 1 } },
     ]);
-    */
 
-    res.status(200).json({ services });
+    res.status(200).json({
+      data: services,
+      success: true,
+      error: false,
+      message: "Nearby services fetched successfully.",
+    });
   } catch (error) {
     console.error("Error fetching nearby services:", error);
     res.status(500).json({ message: "Server error" });

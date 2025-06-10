@@ -20,6 +20,7 @@ const statusCodes_1 = __importDefault(require("../../data/statusCodes"));
 const ApiResponse_1 = __importDefault(require("../../utils/response/ApiResponse"));
 const categoryModel_1 = __importDefault(require("../../models/categoryModel"));
 const userInteraction_1 = __importDefault(require("../../models/userInteraction"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const viewService = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { serviceId } = req.params;
@@ -108,7 +109,7 @@ const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, fun
     try {
         // @ts-ignore
         const userId = req.user._id;
-        console.log(userId);
+        const respon = yield axios_1.default.get("https://recommondedsys.onrender.com/train");
         // Call external recommendation system
         const response = yield axios_1.default.get(`https://recommondedsys.onrender.com/recommend/${userId}`);
         console.log(response);
@@ -147,10 +148,8 @@ exports.getRecommendedByUser = getRecommendedByUser;
 const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { service } = req.params;
-        console.log(service);
         // 1. fetch the list of recommended titles from your Python service
         const response = yield axios_1.default.get(`http://localhost:5000/recommendations?service=${encodeURIComponent(service)}`);
-        console.log(response);
         const recommendedTitles = response.data.recommendations;
         if (!recommendedTitles.length) {
             res.status(200).json({
@@ -211,41 +210,39 @@ const getNearbyServices = (req, res) => __awaiter(void 0, void 0, void 0, functi
     try {
         const longitude = parseFloat(req.query.longitude);
         const latitude = parseFloat(req.query.latitude);
+        const categoryId = req.query.categoryId || "67dbdab6dfdd315f88f954e8";
         if (isNaN(longitude) || isNaN(latitude)) {
             res.status(400).json({ message: "Invalid coordinates" });
             return;
         }
-        // Option 1: Simple $near query (works well and is fast)
-        const services = yield serviceModel_1.default.find({
-            geoLocation: {
-                $near: {
-                    $geometry: {
+        if (!mongoose_1.default.Types.ObjectId.isValid(categoryId)) {
+            res.status(400).json({ message: "Invalid category ID" });
+            return;
+        }
+        const services = yield serviceModel_1.default.aggregate([
+            {
+                $geoNear: {
+                    near: {
                         type: "Point",
                         coordinates: [longitude, latitude],
                     },
-                    $maxDistance: 5000, // 5 km radius
+                    distanceField: "distance",
+                    maxDistance: 50000, // 50 km
+                    spherical: true,
+                    query: {
+                        status: "active",
+                        category: new mongoose_1.default.Types.ObjectId(categoryId),
+                    },
                 },
             },
-            status: "active",
-        });
-        // Option 2 (Optional): Use aggregation to include distance
-        /*
-        const services = await Service.aggregate([
-          {
-            $geoNear: {
-              near: {
-                type: "Point",
-                coordinates: [longitude, latitude],
-              },
-              distanceField: "distance",
-              maxDistance: 5000,
-              spherical: true,
-              query: { status: "active" },
-            },
-          },
+            { $sort: { distance: 1 } },
         ]);
-        */
-        res.status(200).json({ services });
+        res.status(200).json({
+            data: services,
+            success: true,
+            error: false,
+            message: "Nearby services fetched successfully.",
+        });
     }
     catch (error) {
         console.error("Error fetching nearby services:", error);
