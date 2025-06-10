@@ -89,8 +89,36 @@ exports.createService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 // );
 // Update service
 exports.updateService = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { title, description, category, image, price, tags } = req.body;
-    const updatedService = yield serviceModel_1.default.findByIdAndUpdate(req.params.serviceId, { title, description, category, image, price, tags }, { new: true });
+    const { title, description, category, price, tags, location, status, image, // should be an array of Cloudinary URLs
+    coordinates, } = req.body;
+    if (!Array.isArray(image)) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Images should be an array of URLs");
+    }
+    let parsedCoordinates = [];
+    try {
+        parsedCoordinates = JSON.parse(coordinates); // frontend sends it as JSON string
+    }
+    catch (_a) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid coordinates format");
+    }
+    if (!Array.isArray(parsedCoordinates) || parsedCoordinates.length !== 2) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Coordinates must be [lng, lat]");
+    }
+    const updatePayload = {
+        title,
+        description,
+        category,
+        price,
+        tags,
+        location,
+        status,
+        image,
+        geoLocation: {
+            type: "Point",
+            coordinates: parsedCoordinates,
+        },
+    };
+    const updatedService = yield serviceModel_1.default.findByIdAndUpdate(req.params.serviceId, updatePayload, { new: true });
     if (!updatedService)
         throw new ApiError_1.default(statusCodes_1.default.notFound, "Service not found");
     res

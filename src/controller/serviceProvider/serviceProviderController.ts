@@ -108,30 +108,62 @@ export const createService = asyncHandler(
 
 // Update service
 
-export const updateService = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { title, description, category, image, price, tags } = req.body;
+export const updateService = asyncHandler(async (req: Request, res: Response) => {
+  const {
+    title,
+    description,
+    category,
+    price,
+    tags,
+    location,
+    status,
+    image, // should be an array of Cloudinary URLs
+    coordinates,
+  } = req.body;
 
-    const updatedService = await Service.findByIdAndUpdate(
-      req.params.serviceId,
-      { title, description, category, image, price, tags },
-      { new: true }
-    );
-
-    if (!updatedService)
-      throw new ApiError(STATUS.notFound, "Service not found");
-
-    res
-      .status(STATUS.ok)
-      .json(
-        new ApiResponse(
-          STATUS.ok,
-          updatedService,
-          "Service updated successfully"
-        )
-      );
+  if (!Array.isArray(image)) {
+    throw new ApiError(STATUS.badRequest, "Images should be an array of URLs");
   }
-);
+
+  let parsedCoordinates: number[] = [];
+  try {
+    parsedCoordinates = JSON.parse(coordinates); // frontend sends it as JSON string
+  } catch {
+    throw new ApiError(STATUS.badRequest, "Invalid coordinates format");
+  }
+
+  if (!Array.isArray(parsedCoordinates) || parsedCoordinates.length !== 2) {
+    throw new ApiError(STATUS.badRequest, "Coordinates must be [lng, lat]");
+  }
+
+  const updatePayload: any = {
+    title,
+    description,
+    category,
+    price,
+    tags,
+    location,
+    status,
+    image,
+    geoLocation: {
+      type: "Point",
+      coordinates: parsedCoordinates,
+    },
+  };
+
+  const updatedService = await Service.findByIdAndUpdate(
+    req.params.serviceId,
+    updatePayload,
+    { new: true }
+  );
+
+  if (!updatedService) throw new ApiError(STATUS.notFound, "Service not found");
+
+  res
+    .status(STATUS.ok)
+    .json(new ApiResponse(STATUS.ok, updatedService, "Service updated successfully"));
+});
+
 
 // Delete service
 export const deleteService = asyncHandler(
