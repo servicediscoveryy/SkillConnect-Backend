@@ -153,9 +153,10 @@ export const getProviderServiceById = asyncHandler(
       );
 
       if (!service) {
-        return res
+        res
           .status(STATUS.notFound)
           .json(new ApiResponse(STATUS.notFound, null, "Service not found"));
+        return;
       }
 
       res

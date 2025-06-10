@@ -275,11 +275,12 @@ export const updateUserProfile = async (
     const existingUser = await User.findOne({ phone });
 
     if (existingUser) {
-      return res.status(400).json({
+      res.status(400).json({
         message: "Phone number is already in use",
         error: true,
         success: false,
       });
+      return;
     }
 
     // Update user profile
@@ -290,24 +291,27 @@ export const updateUserProfile = async (
     );
 
     if (!updatedUser) {
-      return res.status(404).json({
+      res.status(404).json({
         message: "User not found",
         error: true,
         success: false,
       });
+      return;
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       message: "Profile updated successfully",
       data: updatedUser,
       success: true,
       error: false,
     });
+    return;
   } catch (error: any) {
-    return res.status(500).json({
+    res.status(500).json({
       message: error.message || "Internal Server Error",
       error: true,
       success: false,
     });
+    return;
   }
 };

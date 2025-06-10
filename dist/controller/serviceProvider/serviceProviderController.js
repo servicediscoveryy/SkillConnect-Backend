@@ -109,9 +109,10 @@ exports.getProviderServiceById = (0, asyncHandler_1.default)((req, res) => __awa
         // Find service by ID and populate category
         const service = yield serviceModel_1.default.findById(id).populate("category", "category");
         if (!service) {
-            return res
+            res
                 .status(statusCodes_1.default.notFound)
                 .json(new ApiResponse_1.default(statusCodes_1.default.notFound, null, "Service not found"));
+            return;
         }
         res
             .status(statusCodes_1.default.ok)
