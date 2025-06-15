@@ -46,7 +46,7 @@ const serviceSchema = new mongoose_1.default.Schema({
             default: "Point",
         },
         coordinates: {
-            type: [Number],
+            type: [Number], // [longitude, latitude]
             required: true,
         },
     },

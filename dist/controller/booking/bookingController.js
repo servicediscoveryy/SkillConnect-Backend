@@ -177,7 +177,7 @@ exports.updateBookingStatus = (0, asyncHandler_1.default)((req, res) => __awaite
     const booking = yield bookingModel_1.default.findById(bookingId)
         .populate("userId")
         .populate({
-        path: "serviceId",
+        path: "serviceId", // Populating service information
         populate: {
             path: "providerId",
         },
@@ -358,9 +358,9 @@ exports.cancelBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(void
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, {}, "Booking cancelled successfully"));
 }));
 exports.cancelBookingByUser = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _k;
+    var _a;
     const { orderId } = req.params;
-    const userId = (_k = req.user) === null || _k === void 0 ? void 0 : _k._id;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id;
     if (!orderId) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Order ID is required");
     }
@@ -457,9 +457,9 @@ exports.CompleteBooking = (0, asyncHandler_1.default)((req, res) => __awaiter(vo
         .json(new ApiResponse_1.default(statusCodes_1.default.ok, booking, "Booking status updated"));
 }));
 exports.getProviderOrderStats = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _l;
+    var _a;
     // @ts-ignore
-    const providerId = (_l = req.user) === null || _l === void 0 ? void 0 : _l._id; // Make sure `req.user` is populated via auth middleware
+    const providerId = (_a = req.user) === null || _a === void 0 ? void 0 : _a._id; // Make sure `req.user` is populated via auth middleware
     if (!mongoose_1.default.Types.ObjectId.isValid(providerId)) {
         throw new ApiError_1.default(statusCodes_1.default.badRequest, "Invalid provider ID");
     }

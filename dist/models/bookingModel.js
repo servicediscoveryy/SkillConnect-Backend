@@ -25,7 +25,7 @@ const bookingSchema = new mongoose_1.default.Schema({
     paymentMethod: {
         type: String,
         enum: ["online", "cod"],
-    },
+    }, // Payment method
     orderStatus: {
         type: String,
         enum: ["pending", "accepted", "completed", "cancelled"],
