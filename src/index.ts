@@ -26,7 +26,7 @@ app.use(express.json());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["http://localhost:5173", "http://localhost:5174","https://servicediscovery-kr3f.onrender.com"],
     credentials: true,
   })
 );
