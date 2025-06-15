@@ -131,14 +131,15 @@ export const getRecommendedByUser = async (
     // @ts-ignore
     const userId = req.user._id;
 
-    const respon = await axios.get("https://recommondedsys.onrender.com/train");
+    const respon = await axios.get("https://knn-recommendation.onrender.com/train");
 
+    console.log(respon)
     // Call external recommendation system
     const response = await axios.get(
-      `https://recommondedsys.onrender.com/recommend/${userId}`
+      `https://knn-recommendation.onrender.com/recommend/${userId}`
     );
 
-    console.log(response);
+    console.log(response)
 
     const recommendedServiceIds: string[] = response?.data?.map(
       (service: any) => service.id
@@ -154,9 +155,13 @@ export const getRecommendedByUser = async (
       return;
     }
 
+    const validIds = recommendedServiceIds.filter((id) =>
+      mongoose.Types.ObjectId.isValid(id)
+    );
+
     // Fetch services from your database
     const recommendedServices = await Service.find({
-      _id: { $in: recommendedServiceIds },
+      _id: { $in: validIds.map((id) => new mongoose.Types.ObjectId(id)) },
     });
 
     console.log(recommendedServices);
@@ -183,7 +188,7 @@ export const getRelatedRecommendation = async (req: Request, res: Response) => {
 
     // 1. fetch the list of recommended titles from your Python service
     const response = await axios.get<{ recommendations: string[] }>(
-      `http://localhost:5000/recommendations?service=${encodeURIComponent(
+      `https://apriori-algo.onrender.com/recommendations?service=${encodeURIComponent(
         service
       )}`
     );
