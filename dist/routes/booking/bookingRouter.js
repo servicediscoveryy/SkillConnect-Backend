@@ -15,6 +15,6 @@ bookingRouter.patch("/cancel/:orderId", authMiddleware_1.authuser, bookingContro
 bookingRouter.get("/:bookingId", authMiddleware_1.authuser, bookingController_1.getBookingById);
 bookingRouter.get("/", authMiddleware_1.authuser, bookingController_1.getUserBookings);
 bookingRouter.get("/dashboard/stats", authMiddleware_1.authuser, providerCheckMiddleware_1.isServiceProvider, bookingController_1.getProviderOrderStats);
-bookingRouter.post("/booking-otp", providerCheckMiddleware_1.isServiceProvider, bookingController_1.GenerateOtpBookingComplete);
+bookingRouter.post("/booking-otp", authMiddleware_1.authuser, providerCheckMiddleware_1.isServiceProvider, bookingController_1.GenerateOtpBookingComplete);
 bookingRouter.post("/booking-otp/verify", providerCheckMiddleware_1.isServiceProvider, bookingController_1.CompleteBooking);
 exports.default = bookingRouter;

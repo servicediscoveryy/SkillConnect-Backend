@@ -59,7 +59,8 @@ const userSchema = new mongoose_1.Schema({
         set: (value) => value.toLowerCase(),
     },
     password: {
-        type: String
+        type: String,
+        required: false,
     },
     role: {
         type: String,

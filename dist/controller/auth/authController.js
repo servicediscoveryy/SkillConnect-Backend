@@ -27,18 +27,20 @@ const otp_1 = require("../../utils/notification/otp");
 exports.sendOtpController = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     console.log(req.body);
-    // Check if user exists
-    const isExist = yield userModel_1.default.findOne({ email });
-    if (isExist) {
-        const otp = yield (0, otp_1.storeOTP)(email);
-        // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
-        (0, email_1.sendEmail)(email, "Otp Verification", otp);
-        console.log(`OTP for ${email}: ${otp}`);
+    if (!email) {
+        throw new ApiError_1.default(statusCodes_1.default.badRequest, "Email is Required");
     }
-    else {
-        const user = yield userModel_1.default.findOne({ email });
+    // Check if user exists
+    const user = yield userModel_1.default.findOne({ email });
+    if (!user) {
+        const user = new userModel_1.default({ email: email });
+        yield user.save();
     }
     // Generate and store OTP in Redis (valid for 5 minutes)
+    const otp = yield (0, otp_1.storeOTP)(email);
+    // TODO: Send OTP via email/SMS (use a service like Twilio or Nodemailer)
+    (0, email_1.sendEmail)(email, "Otp Verification", otp);
+    console.log(`OTP for ${email}: ${otp}`);
     res.json(new ApiResponse_1.default(200, { email }, "OTP sent successfully"));
     return;
 }));

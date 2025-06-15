@@ -38,6 +38,7 @@ bookingRouter.get(
 
 bookingRouter.post(
   "/booking-otp",
+  authuser,
   isServiceProvider,
   GenerateOtpBookingComplete
 );

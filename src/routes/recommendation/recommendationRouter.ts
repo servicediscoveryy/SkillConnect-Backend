@@ -18,6 +18,6 @@ recommendationRouter.get("/recommended", authuser, getRecommendedByUser);
 
 recommendationRouter.get("/related/:service", getRelatedRecommendation);
 
-recommendationRouter.get("/near-services", authuser, getNearbyServices);
+recommendationRouter.get("/near-services", getNearbyServices);
 
 export default recommendationRouter;

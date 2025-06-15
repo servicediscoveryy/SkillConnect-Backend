@@ -36,8 +36,8 @@ const userSchema = new Schema<IUser>(
       set: (value: string) => value.toLowerCase(),
     },
     password: {
-      type: String
-     
+      type: String,
+      required: false,
     },
     role: {
       type: String,
