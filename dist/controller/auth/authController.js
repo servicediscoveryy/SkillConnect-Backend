@@ -94,7 +94,6 @@ exports.userSignupController = (0, asyncHandler_1.default)((req, res) => __await
     // Check if email or phone already exists
     const existingUser = yield userModel_1.default.findOne({ email });
     if (existingUser) {
-        console.log(existingUser);
         const response = new ApiError_1.default(statusCodes_1.default.conflict, "User with this email already exists");
         return res.status(response.statusCode).json(response.toJSON());
     }

@@ -60,6 +60,7 @@ const recordInteraction = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 .json(new ApiError_1.default(statusCodes_1.default.notFound, "Service Not Found"));
             return;
         }
+        console.log(service);
         // Check if the category exists
         const category = yield categoryModel_1.default.findById(service.category);
         if (!category) {

@@ -28,7 +28,6 @@ exports.getServices = (0, asyncHandler_1.default)((req, res) => __awaiter(void 0
     const limit = parseInt(req.query.limit) || 10;
     const filter = { status: "active" };
     let categoryIds = [];
-    console.log(category);
     // 🔍 Search for matching categories if query is provided
     if (query) {
         const matchedCategories = yield categoryModel_1.default.find({

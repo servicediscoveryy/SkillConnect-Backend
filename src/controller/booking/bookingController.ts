@@ -19,7 +19,6 @@ export const createBooking = asyncHandler(
     const { serviceId, addressId } = req.body;
     if (!req.user) throw new ApiError(STATUS.unauthorized, "Unauthorized");
 
-    console.log(serviceId);
     if (
       !mongoose.Types.ObjectId.isValid(serviceId) ||
       !mongoose.Types.ObjectId.isValid(addressId)
@@ -196,7 +195,6 @@ export const updateBookingStatus = asyncHandler(
   async (req: Request, res: Response) => {
     const { bookingId } = req.params;
     const { orderStatus, paymentStatus } = req.body;
-    console.log("inside the booking");
     const validOrderStatuses = [
       "accepted",
       "pending",
@@ -214,7 +212,6 @@ export const updateBookingStatus = asyncHandler(
         },
       });
     if (!booking) throw new ApiError(STATUS.notFound, "Booking not found");
-    console.log(booking);
     // Validate order status
     if (orderStatus && !validOrderStatuses.includes(orderStatus)) {
       throw new ApiError(STATUS.badRequest, "Invalid order status value");

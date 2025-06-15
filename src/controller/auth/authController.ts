@@ -108,7 +108,6 @@ export const userSignupController = asyncHandler(
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      console.log(existingUser);
       const response = new ApiError(
         STATUS.conflict,
         "User with this email already exists"

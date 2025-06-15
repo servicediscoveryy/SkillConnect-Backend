@@ -105,7 +105,6 @@ exports.deleteService = (0, asyncHandler_1.default)((req, res) => __awaiter(void
 // Get all services by serach category
 exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = req === null || req === void 0 ? void 0 : req.user._id;
-    console.log("services", id);
     const { category, query } = req.query; // Using query params for both category and search query
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -129,7 +128,6 @@ exports.getProviderServices = (0, asyncHandler_1.default)((0, asyncHandler_1.def
         .populate("category", "category")
         .skip((page - 1) * limit)
         .limit(limit);
-    console.log(services);
     // Send the response with pagination info
     res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, services, "Services fetched successfully", {
         totalPages: Math.ceil(totalServices / limit),
@@ -198,7 +196,6 @@ exports.getUsersForProviderBookings = (0, asyncHandler_1.default)((req, res) => 
         throw new ApiError_1.default(statusCodes_1.default.unauthorized, "Unauthorized");
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    console.log("INSIDE THE BOOKINGS USERS");
     const { users, totalUsers } = yield (0, userServices_1.getUsersWhoBookedProviderServices)(req.user._id, page, limit);
     res.status(statusCodes_1.default.ok).json(new ApiResponse_1.default(statusCodes_1.default.ok, {
         users,
