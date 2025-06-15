@@ -176,7 +176,7 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
             },
             {
                 $lookup: {
-                    from: "ratings", // your Ratings collection
+                    from: "ratings",
                     localField: "_id",
                     foreignField: "serviceId",
                     as: "ratings",
@@ -230,7 +230,7 @@ const getNearbyServices = (req, res) => __awaiter(void 0, void 0, void 0, functi
                         coordinates: [longitude, latitude],
                     },
                     distanceField: "distance",
-                    maxDistance: 50000, // 50 km
+                    maxDistance: 50000,
                     spherical: true,
                     query: {
                         status: "active",

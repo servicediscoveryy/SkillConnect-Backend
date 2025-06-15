@@ -38,7 +38,6 @@ export const sendOtpController = asyncHandler(
     return;
   }
 );
-
 export const verifyOtpController = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
   const { signup } = req.query;

@@ -17,7 +17,7 @@ const razorpay_1 = __importDefault(require("razorpay"));
 const serviceModel_1 = __importDefault(require("../../models/serviceModel"));
 const bookingModel_1 = __importDefault(require("../../models/bookingModel"));
 const razorpay = new razorpay_1.default({
-    key_id: process.env.razorpay_ID, // Replace with your Razorpay Key ID
+    key_id: process.env.razorpay_ID,
     key_secret: process.env.razorpaySecret, // Replace with your Razorpay Key Secret
 });
 // export const createOrder = async (req: RequestWithUser, res: Response) => {
@@ -67,7 +67,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const totalAmount = services.reduce((acc, s) => acc + s.price, 0) * 100; // paise
         // Pre-book all services
         const bookings = yield Promise.all(service.map((serviceId) => bookingModel_1.default.create({
-            orderId: `INIT-${Date.now()}`, // temporary
+            orderId: `INIT-${Date.now()}`,
             amount: totalAmount / service.length,
             userId,
             addressId,

@@ -76,9 +76,9 @@ exports.verifyOtpController = (0, asyncHandler_1.default)((req, res) => __awaite
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production", // Only in HTTPS
+        secure: process.env.NODE_ENV === "production",
         httpOnly: true,
     })
         .status(200)
@@ -126,7 +126,7 @@ exports.storeSignUpController = (0, asyncHandler_1.default)((req, res) => __awai
     });
     res
         .cookie("token", jwtToken, {
-        maxAge: 24 * 60 * 60 * 1000, // Token valid for 1 day
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: "none",
         // secure: true,
         httpOnly: true,
