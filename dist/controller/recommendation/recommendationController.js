@@ -110,9 +110,10 @@ const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, fun
     try {
         // @ts-ignore
         const userId = req.user._id;
-        const respon = yield axios_1.default.get("https://recommondedsys.onrender.com/train");
+        const respon = yield axios_1.default.get("https://knn-recommendation.onrender.com/train");
+        console.log(respon);
         // Call external recommendation system
-        const response = yield axios_1.default.get(`https://recommondedsys.onrender.com/recommend/${userId}`);
+        const response = yield axios_1.default.get(`https://knn-recommendation.onrender.com/recommend/${userId}`);
         console.log(response);
         const recommendedServiceIds = (_a = response === null || response === void 0 ? void 0 : response.data) === null || _a === void 0 ? void 0 : _a.map((service) => service.id);
         if (!recommendedServiceIds || recommendedServiceIds.length === 0) {
@@ -124,9 +125,10 @@ const getRecommendedByUser = (req, res) => __awaiter(void 0, void 0, void 0, fun
             });
             return;
         }
+        const validIds = recommendedServiceIds.filter((id) => mongoose_1.default.Types.ObjectId.isValid(id));
         // Fetch services from your database
         const recommendedServices = yield serviceModel_1.default.find({
-            _id: { $in: recommendedServiceIds },
+            _id: { $in: validIds.map((id) => new mongoose_1.default.Types.ObjectId(id)) },
         });
         console.log(recommendedServices);
         res.status(200).json({
@@ -150,7 +152,7 @@ const getRelatedRecommendation = (req, res) => __awaiter(void 0, void 0, void 0,
     try {
         const { service } = req.params;
         // 1. fetch the list of recommended titles from your Python service
-        const response = yield axios_1.default.get(`http://localhost:5000/recommendations?service=${encodeURIComponent(service)}`);
+        const response = yield axios_1.default.get(`https://apriori-algo.onrender.com/recommendations?service=${encodeURIComponent(service)}`);
         const recommendedTitles = response.data.recommendations;
         if (!recommendedTitles.length) {
             res.status(200).json({
